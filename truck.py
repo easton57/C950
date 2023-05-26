@@ -1,8 +1,7 @@
 # Truck object file
 
 class Truck:
-    def __init__(self, truck_number):
-        self.number = truck_number
+    def __init__(self):
         self.packages = []
         self.drivers = 2
 
