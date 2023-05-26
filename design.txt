@@ -1,0 +1,21 @@
+A. get delivered, idk
+
+B. Word doc
+
+C. Pandas mayhaps to read the xlsx files? Regardless, they'll need to be read
+
+D. No dictionaries :( 
+
+E. Need to think of a hash algo could do, dictionary to hash to dictionary (ID: Hash, Hash: values) Could be individualized too. ID: Hash: Address or deadline or etc.?
+
+F. Look up based on any, default values for each, return all values
+
+G. Interface: Kivy. Have an initial window that asks for how many packages, change to a listed view with time, speed, miles driven.
+
+H. Easy
+
+I. Hhhhh
+
+J. Determine later
+
+K. Oh I can justify it when it's done
