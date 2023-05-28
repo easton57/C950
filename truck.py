@@ -6,6 +6,7 @@ class Truck:
         self.drivers = 2
         self.speed = 18 # in mph
         self.status = "Parked"
+        self.mileage = 0
 
     def add_package(self, new_package, location, special_note=False):
         if len(self.packages) == 16:
@@ -22,3 +23,6 @@ class Truck:
             self.status = "Out for Deliveries"
         else:
             self.status = "Parked"
+
+    def update_mileage(self, miles):
+        self.mileage += miles
