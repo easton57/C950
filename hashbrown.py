@@ -43,7 +43,7 @@ class HashIt:
                     hash_key = 0
 
     # Get function
-    def get(self, key):
+    def get(self, key) -> str or bool:
         read = False
 
         # get a hash value
@@ -63,7 +63,7 @@ class HashIt:
                 return False
 
     # drop function
-    def drop(self, key):
+    def drop(self, key) -> bool:
         dropped = False
 
         # get a hash value
@@ -95,7 +95,7 @@ class HashIt:
 
 
 class Packages:
-    def set_package(self, id, deliv_addr, deliv_deadline, deliv_city, deliv_zip, deliv_weight, deliv_status):
+    def set_package(self, id, deliv_addr, deliv_deadline, deliv_city, deliv_zip, deliv_weight, deliv_status) -> None:
         package = HashIt()
         package.set("Package ID", id)
         package.set("Delivery Address", deliv_addr)
@@ -108,9 +108,9 @@ class Packages:
         self.packages = HashIt()
         self.packages.set(id, package)
 
-    def get_package(self, id):
+    def get_package(self, id) -> HashIt:
         return self.packages.get(id)
     
     # Print the table in a nice way
-    def __str__(self):
+    def __str__(self) -> str:
         return self.packages.__str__()
