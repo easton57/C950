@@ -72,38 +72,38 @@ D.  Identify a self-adjusting data structure, such as a hash table, that can be 
     Note: Use only appropriate built-in data structures, except dictionaries. You must design, write, implement, and debug all code that you turn in for this assessment. Code downloaded from the Internet or acquired from another student or any other source may not be submitted and will result in automatic failure of this assessment.
 <br><br>
 
-E.  Develop a hash table, without using any additional libraries or classes, that has an insertion function that takes the following components as input and inserts the components into the hash table:
+~~E.  Develop a hash table, without using any additional libraries or classes, that has an insertion function that takes the following components as input and inserts the components into the hash table:~~
 
-•   package ID number
+~~•   package ID number~~
 
-•   delivery address
+~~•   delivery address~~
 
-•   delivery deadline
+~~•   delivery deadline~~
 
-•   delivery city
+~~•   delivery city~~
 
-•   delivery zip code
+~~•   delivery zip code~~
 
-•   package weight
+~~•   package weight~~
 
-•   delivery status (e.g., delivered, en route)
+~~•   delivery status (e.g., delivered, en route)~~
 <br><br>
 
-F.  Develop a look-up function that takes the following components as input and returns the corresponding data elements:
+~~F.  Develop a look-up function that takes the following components as input and returns the corresponding data elements:~~
 
-•   package ID number
+~~•   package ID number~~
 
-•   delivery address
+~~•   delivery address~~
 
-•   delivery deadline
+~~•   delivery deadline~~
 
-•   delivery city
+~~•   delivery city~~
 
-•   delivery zip code
+~~•   delivery zip code~~
 
-•   package weight
+~~•   package weight~~
 
-•   delivery status (i.e., “at the hub,” “en route,” or “delivered”), including the delivery time
+~~•   delivery status (i.e., “at the hub,” “en route,” or “delivered”), including the delivery time~~
 <br><br>
 
 G.  Provide an interface for the user to view the status and info (as listed in part F) of any package at any time, and the total mileage traveled by all trucks. (The delivery status should report the package as at the hub, en route, or delivered. Delivery status must include the time.)
