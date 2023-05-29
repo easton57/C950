@@ -7,19 +7,20 @@ import math
 
 # define some constants
 max_value = os.sys.maxsize
-max_size = 10
 
 
 class Graph:
     """ Our graph class for this project """
 
-    def __init__(self):
+    def __init__(self, size):
         """ Initialization for graph """
+        self.max_size = size
+
         # make an array full of max_value
-        self.my_map = [[math.inf for x in range(max_size)] for y in range(max_size)]
+        self.my_map = [[math.inf for x in range(self.max_size)] for y in range(self.max_size)]
 
         # fill my labels array with -1
-        self.labels = [-1] * max_size
+        self.labels = [-1] * self.max_size
 
     def __str__(self):
         """ Print the graph """
@@ -31,7 +32,7 @@ class Graph:
         output += ("\nVertex\tAdjacency List\n")
 
         # inefficient loop time yay
-        for i in range(max_size):
+        for i in range(self.max_size):
             # print out the current vertex
             if self.labels[i] != -1:
                 output += (self.labels[i] + "\t[")
@@ -39,7 +40,7 @@ class Graph:
                 break
 
             # print out connecting vertex data
-            for j in range(max_size):
+            for j in range(self.max_size):
                 if self.my_map[i][j] is not math.inf:
                     # use a statement to determine if we need a comma
                     if printed is True:
@@ -60,7 +61,7 @@ class Graph:
         """ Needed to find the number of vertices since I overcomplicated this in the beginning """
         total = 0
 
-        for i in range(max_size):
+        for i in range(self.max_size):
             if self.labels[i] != -1:
                 total += 1
 
@@ -73,7 +74,7 @@ class Graph:
             raise ValueError
 
         # loop to find the next empty
-        for i in range(max_size):
+        for i in range(self.max_size):
             if self.labels[i] == -1:
                 self.labels[i] = label
                 return self
@@ -131,7 +132,7 @@ class Graph:
             print("\tvisited", self.labels[tmp])
 
             # find adjacent vertices
-            for i in range(max_size):
+            for i in range(self.max_size):
                 # ignore if it is max_value or has been visited
                 if self.my_map[tmp][i] is math.inf or self.already_visited(visited, i):
                     continue
@@ -163,7 +164,7 @@ class Graph:
             print("\tvisited", self.labels[tmp])
 
             # find adjacent vertices
-            for i in range(max_size):
+            for i in range(self.max_size):
                 # ignore if it is max_value or has been visited
                 if self.my_map[tmp][i] is math.inf or self.already_visited(visited, i):
                     continue
@@ -194,25 +195,25 @@ class Graph:
     def dijkstra_shortest_path(self, src, dest=None):
         """ DSP for whole graph """
         # make sure src is in the map
-        for i in range(max_size):
+        for i in range(self.max_size):
             if self.labels.index(src) is not None:
                 break
             raise ValueError
 
         # declare needed stuff
-        path = [-1] * max_size
-        distance = [math.inf] * max_size
-        prev_vertex = [math.inf] * max_size
+        path = [-1] * self.max_size
+        distance = [math.inf] * self.max_size
+        prev_vertex = [math.inf] * self.max_size
 
         # set distance for starting vertex 0
         distance[self.get_index(src)] = 0
 
         # go through each vertex and find it's distance
-        for i in range(max_size - 1):
+        for i in range(self.max_size - 1):
             # declare some needed variables and give them ridiculous values
             min_path = math.inf
 
-            for j in range(max_size):
+            for j in range(self.max_size):
                 if prev_vertex[j] == math.inf and distance[j] <= min_path:
                     min_path = distance[j]
                     min_index = j
@@ -221,7 +222,7 @@ class Graph:
             prev_vertex[min_index] = min_index
 
             # update the distance of adjacent vertices
-            for k in range(max_size):
+            for k in range(self.max_size):
                 if prev_vertex[k] and self.my_map[min_index][k] != math.inf and \
                         distance[min_index] != math.inf and \
                         distance[min_index] + self.my_map[min_index][k] < distance[k]:
@@ -234,7 +235,7 @@ class Graph:
             # put everything into a dict file
             all_paths = {}
 
-            for i in range(max_size):
+            for i in range(self.max_size):
                 # break if it goes too far
                 if self.labels[i] == -1:
                     break
@@ -265,7 +266,7 @@ class Graph:
 
     def get_index(self, label):
         """ Function to find the index of a label """
-        for i in range(max_size):
+        for i in range(self.max_size):
             if self.labels[i] == label:
                 return i
 
