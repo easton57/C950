@@ -2,3 +2,4 @@ venv
 tmp.py
 tmp.*
 *.pyc
+graphs.py
