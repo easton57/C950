@@ -41,7 +41,7 @@ def main():
     for i in range(len(distances_df.index)):
         row = distances_df.iloc[i]
 
-        stop_map.add_vertex(row[0])
+        stop_map.add_vertex(row[0].replace('\n', ' '))
 
     # add the edges
     for i in range(len(distances_df.index)):
@@ -49,15 +49,14 @@ def main():
 
         for j in range(2, 29):
             if not math.isnan(row[j]):
-                stop_map.add_edge(row[0], distances_headers.iloc[j], row[j])
+                stop_map.add_edge(row[0].replace('\n', ' '), distances_headers.iloc[j].replace('\n', ' '), row[j])
 
-    print(stop_map)
     # Generate all possible routes
 
     # Create add the packages to the trucks, accounting for weirdness
 
     # Execute the routes
-
+    pass
 
 if __name__ == "__main__":
     main()
