@@ -57,7 +57,7 @@ B.  Write an overview of your program, in which you do the following:
 6.  Discuss the strengths and weaknesses of the self-adjusting data structures (e.g., the hash table).
 <br><br>
 
-C.  Write an original program to deliver all the packages, meeting all requirements, using the attached supporting documents “Salt Lake City Downtown Map,” “WGUPS Distance Table,” and the “WGUPS Package File.”
+~~C.  Write an original program to deliver all the packages, meeting all requirements, using the attached supporting documents “Salt Lake City Downtown Map,” “WGUPS Distance Table,” and the “WGUPS Package File.”~~
 
  ~~1.  Create an identifying comment within the first line of a file named “main.py” that includes your first name, last name, and student ID.~~ First one done. Nice ;)
 
