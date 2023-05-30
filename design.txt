@@ -1,4 +1,6 @@
-A. get delivered, idk, based on dykestra's algorithm?
+A. get delivered, idk, based on dykestra's algorithm? Create as many routes as possible that start at the hub and end at the farthest point
+
+BST with each location and distance inbetween then dykstra's
 
 B. Word doc
 
@@ -6,9 +8,9 @@ C. Pandas mayhaps to read the xlsx files? Regardless, they'll need to be read
 
 D. No dictionaries :( 
 
-E. Need to think of a hash algo could do, dictionary to hash to dictionary (ID: Hash, Hash: values) Could be individualized too. ID: Hash: Address or deadline or etc.?
+*E. Need to think of a hash algo could do, dictionary to hash to dictionary (ID: Hash, Hash: values) Could be individualized too. ID: Hash: Address or deadline or etc.? Done without dictionaries because they are not allowed as dictionaries are a hashmap...
 
-F. Look up based on any, default values for each, return all values
+*F. Look up based on any, default values for each, return all values. Look up based on ID.
 
 G. Interface: Kivy. Have an initial window that asks for how many packages, change to a listed view with time, speed, miles driven.
 
@@ -23,5 +25,5 @@ K. Oh I can justify it when it's done
 
 Notes:
 
-special note is only mentioned once so I'm just going to ignore that and hope for the best.
+special note is only mentioned once so I'm just going to ignore that and hope for the best. <- can't do that, it's in the hashtable
 
