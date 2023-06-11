@@ -97,22 +97,28 @@ class HashIt:
 class Packages:
     packages = HashIt()
 
-    def set_package(self, id, deliv_addr, deliv_deadline, deliv_city, deliv_zip, deliv_weight, deliv_status, note) -> None:
-        package = HashIt()
-        package.set("Package ID", id)
-        package.set("Delivery Address", deliv_addr)
-        package.set("Delivery Deadline", deliv_deadline)
-        package.set("Delivery City", deliv_city)
-        package.set("Delivery Zip Code", deliv_zip)
-        package.set("Delivery Weight", deliv_weight)
-        package.set("Delivery Status", deliv_status)
-        package.set("Special Note", note)
+    def set_package(self, id, deliv_addr, deliv_deadline, deliv_city, deliv_zip, deliv_weight, deliv_status, note, package=None) -> None:
+        if id is not None:
+            package = HashIt()
+            package.set("Package ID", id)
+            package.set("Delivery Address", deliv_addr)
+            package.set("Delivery Deadline", deliv_deadline)
+            package.set("Delivery City", deliv_city)
+            package.set("Delivery Zip Code", deliv_zip)
+            package.set("Delivery Weight", deliv_weight)
+            package.set("Delivery Status", deliv_status)
+            package.set("Special Note", note)
 
-        self.packages.set(id, package)
+            self.packages.set(id, package)
+        else:
+            self.packages.set(package.get("Package ID"), package)
 
     def get_package(self, id) -> HashIt:
         return self.packages.get(id)
     
+    def size(self) -> int:
+        return self.packages.size
+
     # Print the table in a nice way
     def __str__(self) -> str:
         return self.packages.__str__()
