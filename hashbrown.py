@@ -94,9 +94,10 @@ class HashIt:
 
 
 class Packages:
-    packages = HashIt()
+    def __init__(self):
+        self.packages = HashIt()
 
-    def set_package(self, id, deliv_addr, deliv_deadline, deliv_city, deliv_zip, deliv_weight, deliv_status, note, package=None) -> None:
+    def set_package(self, id=None, deliv_addr=None, deliv_deadline=None, deliv_city=None, deliv_zip=None, deliv_weight=None, deliv_status=None, note=None, package=None) -> None:
         if id is not None:
             package = HashIt()
             package.set("Package ID", id)
