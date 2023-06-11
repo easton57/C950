@@ -10,7 +10,7 @@ class Truck:
         self.return_route = []
         self.mileage = 0
 
-    def add_package(self, new_package, location, special_note=False):
+    def add_package(self, new_package):
         if len(self.packages) == 16:
             return False
         else:
