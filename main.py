@@ -5,6 +5,7 @@ from graphs import Graph
 from truck import Truck
 from hashbrown import HashIt, Packages
 
+
 def main():
     # Define our trucks
     truck_1 = Truck()
@@ -76,6 +77,7 @@ def main():
 
     # Execute the routes
     pass
+
 
 if __name__ == "__main__":
     main()
