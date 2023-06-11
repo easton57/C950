@@ -52,8 +52,27 @@ def main():
                 stop_map.add_edge(row[0].replace('\n', ' '), distances_headers.iloc[j].replace('\n', ' '), row[j])
 
     # Generate all possible routes
+    routes = []
 
-    # Create add the packages to the trucks, accounting for weirdness
+    for i in stop_map.labels:
+        for j in stop_map.labels:
+            path = stop_map.dijkstra_shortest_path(i, j)
+            if path[0] != math.inf:
+                routes.append(path)
+
+    # Account for any oddballs
+    delayed = Packages()
+    size = all_packages.size()
+
+    for i in range(size):
+        try:    # Clean this up, ew
+            if all_packages.get_package(i).get("Special Note").__contains__("Delayed"):
+                delayed.set_package(all_packages.get_package(i))
+        except Exception:
+            print(f"Package with id {i} does not exist!")
+            size += 1
+
+    # Create add the packages to the trucks
 
     # Execute the routes
     pass
