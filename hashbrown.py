@@ -14,7 +14,7 @@ class HashIt:
 
     def is_empty(self) -> bool:
         for i in range(self.size):
-            if self.hash_table[i] != []:
+            if self.hash_table[i]:
                 return False
             
         return True
@@ -82,7 +82,6 @@ class HashIt:
 
             if hash_key == hash(key) % self.size:
                 return False
-
 
     # Print the table in a nice way
     def __str__(self) -> str:
