@@ -248,11 +248,11 @@ class Graph:
             return all_paths
         else:
             if distance[self.get_index(dest)] == math.inf:
-                my_tuple = (math.inf, [])
+                my_array = [math.inf, []]
             else:
                 path = self.create_path(path, self.get_index(dest), [])
-                my_tuple = (float(distance[self.get_index(dest)]), path)
-            return my_tuple
+                my_array = [float(distance[self.get_index(dest)]), path]
+            return my_array
 
     def create_path(self, path, i, new_path):
         """ Function to recreate the path as a array """
