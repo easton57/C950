@@ -8,9 +8,14 @@ from hashbrown import HashIt, Packages
 
 def main():
     # Define our trucks
-    truck_1 = Truck()
-    truck_2 = Truck()
-    truck_3 = Truck()
+    total_trucks = 3
+    trucks = []
+
+    for i in range(total_trucks):
+        trucks.append(Truck())
+
+    # Simulation variable, False, follows true time of day, True, 1 minute = 1 second
+    sim_routes = True
 
     # Define our packages hashmap
     all_packages = Packages()
@@ -61,6 +66,9 @@ def main():
             if path[0] != math.inf:
                 routes.append(path)
 
+    # Sort them by route length
+    routes.sort()
+
     # Account for any oddballs
     delayed = Packages()
     size = all_packages.size()
@@ -68,12 +76,22 @@ def main():
     for i in range(size):
         try:    # Clean this up, ew
             if all_packages.get_package(i).get("Special Note").__contains__("Delayed"):
-                delayed.set_package(all_packages.get_package(i))
+                delayed.set_package(package=all_packages.get_package(i))
+                all_packages.get_package(i).set("Delivery Status", "Delayed")
+            elif all_packages.get_package(i).get("Special Note").__contains__("truck"):
+                # Get the truck number
+                num = int(all_packages.get_package(i).get("Special Note")[-1])
+
+                trucks[num - 1].add_package(all_packages.get_package(i))
+                all_packages.get_package(i).set("Delivery Status", f"On Truck {num} for Delivery")
         except Exception:
-            print(f"Package with id {i} does not exist!")
+            print(f"Package with id {i} has no notes!")
             size += 1
 
-    # Create add the packages to the trucks
+    # create package lists based on theoretic max amount of packages
+    theoretic_max = all_packages.size() // total_trucks
+
+    # Calculate time and miles
 
     # Execute the routes
     pass
