@@ -68,17 +68,25 @@ def main():
 
     # Sort them by route length
     routes.sort()
+    i = 0
+
+    # remove any that are distance of 0 or stop len of < 2
+    while i != len(routes):
+        if routes[i][0] == 0.0 or len(routes[i][1]) <= 2:
+            routes.remove(routes[i])
+        else:
+            i += 1
 
     # Account for any oddballs
-    delayed = Packages()
     size = all_packages.size()
 
     for i in range(size):
         try:    # Clean this up, ew
-            if all_packages.get_package(i).get("Special Note").__contains__("Delayed"):
-                delayed.set_package(package=all_packages.get_package(i))
+            curr_pack = all_packages.get_package(i).get("Special Note")
+
+            if curr_pack.__contains__("Delayed"):
                 all_packages.get_package(i).set("Delivery Status", "Delayed")
-            elif all_packages.get_package(i).get("Special Note").__contains__("truck"):
+            elif curr_pack.__contains__("truck"):
                 # Get the truck number
                 num = int(all_packages.get_package(i).get("Special Note")[-1])
 
