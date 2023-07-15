@@ -92,14 +92,50 @@ def main():
 
                 trucks[num - 1].add_package(all_packages.get_package(i))
                 all_packages.get_package(i).set("Delivery Status", f"On Truck {num} for Delivery")
-        except Exception:
-            print(f"Package with id {i} has no notes!")
+            elif curr_pack.__contains__("Must be delivered with"):
+                deliv_list = curr_pack.replace(",", "").split(" ")[4:]
+                deliv_list = [int(id) for id in deliv_list]
+                placed = False
+                truck = 0
+                least = 99999999
+
+                while not placed:
+                    if truck == len(trucks) and not placed:
+                        truck = least
+                        break
+
+                    if least == 99999999 or len(trucks[truck].packages) < len(trucks[least].packages):
+                        least = truck
+
+                    # Check to see if dependents are on the truck already
+                    for j in trucks[truck].packages:
+                        if j.get("Package ID") in deliv_list:
+                            placed = True
+
+                    if not placed:
+                        truck += 1
+
+                # Change the status and add all extra packages to that truck
+                # Change the status note and add to the truck
+                all_packages.get_package(i).set("Delivery Status", f"On truck {truck} for Delivery")
+                trucks[truck].add_package(all_packages.get_package(i))
+
+                # Add extra packages
+                for j in deliv_list:
+                    if all_packages.get_package(j) not in trucks[truck].packages:
+                        trucks[truck].add_package(all_packages.get_package(j))
+                        all_packages.get_package(j).set("Delivery Status", f"On truck {truck} for Delivery")
+
+        except Exception as e:
+            print(f"Package with id {i} has no notes! {e}")
             size += 1
 
     # create package lists based on theoretic max amount of packages
-    theoretic_max = all_packages.size() // total_trucks
+    max_pack = 16  # Per project requirements
 
     # Calculate time and miles
+    mph = 18  # Per project requirements
+    max_miles = 140  # Per project requirements
 
     # Execute the routes
     pass
