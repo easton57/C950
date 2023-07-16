@@ -5,6 +5,17 @@ from graphs import Graph
 from truck import Truck
 from hashbrown import HashIt, Packages
 
+'''
+Depending on how the current mess goes, here's an idea to make it better.
+Instead of go package by package, go based requirement by requirement to mitigate any possible mix-ups if paired 
+packages also have a truck requirement
+
+Create arrays of paired packages
+    [All those that are paired including possible packages that have a truck requirement]
+        Then place them on the required truck if any have a truck requirement
+            [array of 4 packages, oh 3 has a truck requirement? Place all on that truck]
+'''
+
 
 def main():
     # Define our trucks
@@ -135,7 +146,7 @@ def main():
 
     # Calculate time and miles
     mph = 18  # Per project requirements
-    max_miles = 140  # Per project requirements
+    max_miles = 140  # Per project requirements (for all trucks combined)
 
     # Execute the routes
     pass
