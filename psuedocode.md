@@ -76,6 +76,10 @@ with the truck requirement to that list</li>
 <li>Execute the routes</li>
 <li>First route done, take the late packages out</li>
 <li>If the address change is done before the first truck is back, add it to the above, otherwise the next truck back takes it</li>
-<li>Have a pretty little gui to show progress with a checkbox for simulation</li>
+<li>Have a pretty little gui to show progress with a checkbox for simulation
+    <ul>
+    <li>Maybe prompt for truck amount and mile limit etc. Just for fun</li>
+    </ul>
+</li>
 <li>Be done with this class</li>
 </ol>
