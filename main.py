@@ -83,10 +83,11 @@ def main():
 
     # remove any that are distance of 0 or stop len of < 2
     while i != len(routes):
-        if routes[i][0] == 0.0 or len(routes[i][1]) <= 2:
-            routes.remove(routes[i])
-        else:
+        if routes[i][1][0] == 'Western Governors University 4001 South 700 East,  Salt Lake City, UT 84107'\
+                and routes[i][0] != 0.0 and len(routes[i][1]) >= 2:
             i += 1
+        else:
+            routes.remove(routes[i])
 
     # Account for any oddballs
     size = all_packages.size()
@@ -108,14 +109,14 @@ def main():
                 deliv_list = [int(id) for id in deliv_list]
                 placed = False
                 truck = 0
-                least = 99999999
+                least = math.inf
 
                 while not placed:
                     if truck == len(trucks) and not placed:
                         truck = least
                         break
 
-                    if least == 99999999 or len(trucks[truck].packages) < len(trucks[least].packages):
+                    if least == math.inf or len(trucks[truck].packages) < len(trucks[least].packages):
                         least = truck
 
                     # Check to see if dependents are on the truck already
