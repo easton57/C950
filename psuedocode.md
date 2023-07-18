@@ -56,13 +56,14 @@ about the packages for the time being? Maybe that one, that sounds real good. Le
 <li>Create lists that aren't paired to the trucks</li>
 <li>Only make the same amount of initial lists as the amount of trucks</li>
 <li>Look for package pairings first, then if any of those pairings have a truck requirement, add the remaining packages 
-with the truck requirement to that list</li>
+with the truck requirement to that list, if a package has a time requirement but no special note, add it to a list as well</li>
 <li>For the routes:
     <ol>
     <li>Take the 3 (or the amount of trucks) farthest points on the map as the end points for the initial outbound route</li>
-    <li>As routes are made, remove points from the graph so that there aren't double stops</li>
-    <li>Make reverse routes from the end point to the hub, combine the initial and reverse routes, removing points from 
-    the graph like before</li>
+    <li>Make reverse routes from the end point to the hub, combine the initial and reverse routes with all possibilities 
+    that don't have duplicate stops</li>
+    <li>Find routes that match a current lists requirements</li>
+    <li>Once a route is finalized, remove those points (minus the hub) from the graph</li>
     <li><b>!!! As this is all happening reference the existing package lists to make sure paired packages stay together and
     truck specific packages do as well AND ALSO THE GOSH DANG PACKAGES WITH TIMES ON THEM !!!</b></li>
     <li>Check the time and miles of each of those lists if it goes beyond the limit of the requirements, give up and 
