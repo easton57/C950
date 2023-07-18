@@ -4,7 +4,7 @@ class Truck:
     def __init__(self):
         self.packages = []
         self.drivers = 2
-        self.speed = 18 # in mph
+        self.speed = 18  # in mph
         self.status = "Parked"
         self.out_route = []
         self.return_route = []
