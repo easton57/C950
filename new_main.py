@@ -34,6 +34,16 @@ def main():
     distances_df = distances_df.set_axis(distances_headers, axis=1)
     packages_df = packages_df.set_axis(packages_headers, axis=1)
 
+    # Cleanup addresses at the beginning of the rows
+    for i in range(len(distances_df.index)):
+        distances_df.iloc[i][0] = distances_df.iloc[i][0].replace('\n', ' ')
+        distances_df.iloc[i][0] = distances_df.iloc[i][0].replace('  ', ' ')
+
+    # Cleanup distances dataframe headers
+    for j in range(2, 29):
+        distances_headers.iloc[j] = distances_headers.iloc[j].replace('\n', ' ')
+        distances_headers.iloc[j] = distances_headers.iloc[j].replace('  ', ' ')
+
     # Plug packages into our hashmap
     for i in range(len(packages_df.index)):
         row = packages_df.iloc[i]
@@ -47,7 +57,7 @@ def main():
     for i in range(len(distances_df.index)):
         row = distances_df.iloc[i]
 
-        stop_map.add_vertex(row[0].replace('\n', ' '))
+        stop_map.add_vertex([row[0]])
 
     # add the edges
     for i in range(len(distances_df.index)):
@@ -55,10 +65,21 @@ def main():
 
         for j in range(2, 29):
             if not math.isnan(row[j]):
-                stop_map.add_edge(row[0].replace('\n', ' '), distances_headers.iloc[j].replace('\n', ' '), row[j])
+                stop_map.add_edge(row[0], distances_headers.iloc[j].replace('\n', ' '), row[j])
 
-    # Create package lists based on constraints
+    # Add each package to it's spot on the graph
+    for i in range(1, all_packages.size()):
+        pack_id = all_packages.get_package(i).get('Package ID')
+        address = all_packages.get_package(i).get('Delivery Address')
+        new_label = stop_map.get_full_label(address)
 
+        new_label.append(str(pack_id))
+
+        stop_map.update_vertex(address, new_label)
+
+    # Create the routes
+
+    pass
 
 
 if __name__ == "__main__":
