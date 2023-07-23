@@ -54,7 +54,7 @@ about the packages for the time being? Maybe that one, that sounds real good. Le
 
 <ol>
 <li>Create lists that aren't paired to the trucks</li>
-<li>Only make the same amount of initial lists as the amount of trucks</li>
+<li>Only make the same amount of initial lists as the amount of trucks (optional?)</li>
 <li>Look for package pairings first, then if any of those pairings have a truck requirement, add the remaining packages 
 with the truck requirement to that list, if a package has a time requirement but no special note, add it to a list as well</li>
 <li>For the routes:
@@ -84,3 +84,10 @@ with the truck requirement to that list, if a package has a time requirement but
 </li>
 <li>Be done with this class</li>
 </ol>
+<H1>Let's try this one more time</H1>
+<p>Hi, my name's Mile Mor... never mind...</p>
+<h3>I think I got it...</h3>
+
+<p>What we need to do is set each point in the graph to the packages that are being delivered there.
+For now, don't worry about the time's and delays and such. Generate each route to the farthest point
+ on the map and back using the method outlined above. This might make checks a bit easier.</p>
