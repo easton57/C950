@@ -70,8 +70,8 @@ class Graph:
     def add_vertex(self, label):
         """ Function to add a vertex to the graph """
         # verify that the label is a char or string
-        if type(label) != str:
-            raise ValueError
+        # if type(label) != str:
+        #     raise ValueError
 
         # loop to find the next empty
         for i in range(self.max_size):
@@ -79,9 +79,16 @@ class Graph:
                 self.labels[i] = label
                 return self
 
+    def update_vertex(self, label, new_label):
+        """ Function to update a vertex label of the graph """
+        # Find the point that has the matching label
+        for i in range(self.max_size):
+            if label in self.labels[i][0] and self.labels[i] != -1:
+                self.labels[i] = new_label
+                return
+
     def add_edge(self, src, dest, w):
         """ Function to add a edge to the graph """
-
         # get the indexes of each point
         src_index = self.get_index(src)
         dest_index = self.get_index(dest)
@@ -267,8 +274,17 @@ class Graph:
     def get_index(self, label):
         """ Function to find the index of a label """
         for i in range(self.max_size):
-            if self.labels[i] == label:
+            if label in self.labels[i]:
                 return i
+
+        print("Label not found")
+        return -1
+
+    def get_full_label(self, label):
+        """ Function to find the index of a label """
+        for i in range(self.max_size):
+            if label in self.labels[i][0]:
+                return self.labels[i]
 
         print("Label not found")
         return -1
