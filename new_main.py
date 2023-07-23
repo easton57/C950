@@ -67,16 +67,6 @@ def main():
             if not math.isnan(row[j]):
                 stop_map.add_edge(row[0], distances_headers.iloc[j].replace('\n', ' '), row[j])
 
-    # Add each package to it's spot on the graph
-    for i in range(1, all_packages.size()):
-        pack_id = all_packages.get_package(i).get('Package ID')
-        address = all_packages.get_package(i).get('Delivery Address')
-        new_label = stop_map.get_full_label(address)
-
-        new_label.append(str(pack_id))
-
-        stop_map.update_vertex(address, new_label)
-
     # Create the routes
 
     pass
