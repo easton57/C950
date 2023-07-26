@@ -6,6 +6,14 @@ from truck import Truck
 from hashbrown import HashIt, Packages
 
 
+def locate_df_index(df, key):
+    for i in range(len(df.index)):
+        if key in df.iloc[i][1][0] or key in df.iloc[i][0]:
+            return i
+        elif key in df.iloc[i][1] or key in df.iloc[i][0]:
+            return i
+
+
 def main():
     # Define our trucks
     total_trucks = 3
@@ -118,11 +126,15 @@ def main():
     for i in range(1, all_packages.size() + 1):
         pack_id = all_packages.get_package(i).get('Package ID')
         address = all_packages.get_package(i).get('Delivery Address')
-        new_label = stop_map.get_full_label(address)
+        label_index = locate_df_index(distances_df, address)
+        new_label = distances_df.iloc[label_index][1]
+
+        if type(new_label) is not list:
+            new_label = [new_label]
 
         new_label.append(str(pack_id))
 
-        stop_map.update_vertex(address, new_label)
+        distances_df.iloc[label_index][1] = new_label
 
     # Create the routes
     max_miles = 140  # Per project requirements (for all trucks combined)
