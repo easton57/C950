@@ -54,23 +54,6 @@ def main():
 
         all_packages.set_package(row[0], row[1], row[5], row[2], row[4], row[6], "Undelivered", row[7])
 
-    # Make a graph with our locations
-    stop_map = Graph(len(distances_df.index))
-
-    # add the vertices
-    for i in range(len(distances_df.index)):
-        row = distances_df.iloc[i]
-
-        stop_map.add_vertex([row[0], row[1]])
-
-    # add the edges
-    for i in range(len(distances_df.index)):
-        row = distances_df.iloc[i]
-
-        for j in range(2, 29):
-            if not math.isnan(row[j]):
-                stop_map.add_edge(row[0], distances_headers.iloc[j].replace('\n', ' '), row[j])
-
     # filter some stuff
     size = all_packages.size()
 
@@ -147,7 +130,19 @@ def main():
     start_time = "8:00:00 am"
 
     # Generate every possible route? No sir
+    possible_routes = []
+    used = []
+    curr_packages = []
+    starting_stop = None
+    curr_route = []
 
+    # find a route that matches paired
+
+        # go based on closest point until 16 packages has been met then return to the hub
+
+    # Find a route that matches truck requirements
+
+    # Find a route that matches delayed flights
 
     pass
 
