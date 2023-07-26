@@ -144,6 +144,10 @@ def main():
     # Create the routes
     max_miles = 140  # Per project requirements (for all trucks combined)
     mpm = trucks[0].speed / 60
+    start_time = "8:00:00 am"
+
+    # Generate every possible route? No sir
+
 
     pass
 
