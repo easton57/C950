@@ -283,7 +283,7 @@ class Graph:
     def get_full_label(self, label):
         """ Function to find the index of a label """
         for i in range(self.max_size):
-            if label in self.labels[i][0]:
+            if label in self.labels[i][0] or label in self.labels[i][1]:
                 return self.labels[i]
 
         print("Label not found")
