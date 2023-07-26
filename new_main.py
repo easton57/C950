@@ -25,24 +25,28 @@ def main():
     packages = pd.read_excel("./project_files/WGUPS Package File.xlsx")
 
     # Get what we care about
-    distances_df = pd.DataFrame(distances).iloc[7:]
+    distances_df = pd.DataFrame(distances).iloc[7:]  # This is starting on column one
     packages_df = pd.DataFrame(packages).iloc[7:]
 
     distances_headers = pd.DataFrame(distances).iloc[6]
     packages_headers = pd.DataFrame(packages).iloc[6]
 
-    distances_df = distances_df.set_axis(distances_headers, axis=1)
-    packages_df = packages_df.set_axis(packages_headers, axis=1)
-
     # Cleanup addresses at the beginning of the rows
     for i in range(len(distances_df.index)):
         distances_df.iloc[i][0] = distances_df.iloc[i][0].replace('\n', ' ')
         distances_df.iloc[i][0] = distances_df.iloc[i][0].replace('  ', ' ')
+        distances_df.iloc[i][1] = distances_df.iloc[i][1].replace('\n', ' ')
+        distances_df.iloc[i][1] = distances_df.iloc[i][1].replace('  ', ' ')
 
     # Cleanup distances dataframe headers
-    for j in range(2, 29):
-        distances_headers.iloc[j] = distances_headers.iloc[j].replace('\n', ' ')
-        distances_headers.iloc[j] = distances_headers.iloc[j].replace('  ', ' ')
+    for j in range(29):
+        if type(distances_headers.iloc[j]) is not float:
+            distances_headers.iloc[j] = distances_headers.iloc[j].replace('\n', ' ')
+            distances_headers.iloc[j] = distances_headers.iloc[j].replace('  ', ' ')
+
+    # Assign Dataframe headers
+    distances_df = distances_df.set_axis(distances_headers, axis=1)
+    packages_df = packages_df.set_axis(packages_headers, axis=1)
 
     # Plug packages into our hashmap
     for i in range(len(packages_df.index)):
@@ -57,7 +61,7 @@ def main():
     for i in range(len(distances_df.index)):
         row = distances_df.iloc[i]
 
-        stop_map.add_vertex([row[0]])
+        stop_map.add_vertex([row[0], row[1]])
 
     # add the edges
     for i in range(len(distances_df.index)):
@@ -106,7 +110,7 @@ def main():
                 wrong_address.append(all_packages.get_package(i).get("Package ID"))
 
         except Exception as e:
-            print(f"Package with id {i} has no notes! {e}")
+            print(f"Package with id {i} has no notes!")
             size += 1
 
     # some var cleanup for my sake
@@ -127,7 +131,19 @@ def main():
             if list_size > len(paired):
                 break
 
+    # Add each package to it's spot on the graph
+    for i in range(1, all_packages.size() + 1):
+        pack_id = all_packages.get_package(i).get('Package ID')
+        address = all_packages.get_package(i).get('Delivery Address')
+        new_label = stop_map.get_full_label(address)
+
+        new_label.append(str(pack_id))
+
+        stop_map.update_vertex(address, new_label)
+
     # Create the routes
+    max_miles = 140  # Per project requirements (for all trucks combined)
+    mpm = trucks[0].speed / 60
 
     pass
 
