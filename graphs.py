@@ -274,7 +274,7 @@ class Graph:
     def get_index(self, label):
         """ Function to find the index of a label """
         for i in range(self.max_size):
-            if label in self.labels[i]:
+            if label in self.labels[i][0] or label in self.labels[i][1]:
                 return i
 
         print("Label not found")
