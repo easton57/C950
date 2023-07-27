@@ -62,6 +62,23 @@ def main():
 
         all_packages.set_package(row[0], row[1], row[5], row[2], row[4], row[6], "Undelivered", row[7])
 
+    # Make a graph with our locations
+    stop_map = Graph(len(distances_df.index))
+
+    # add the vertices
+    for i in range(len(distances_df.index)):
+        row = distances_df.iloc[i]
+
+        stop_map.add_vertex([row[0], row[1]])
+
+    # add the edges
+    for i in range(len(distances_df.index)):
+        row = distances_df.iloc[i]
+
+        for j in range(2, 29):
+            if not math.isnan(row[j]):
+                stop_map.add_edge(row[0], distances_headers.iloc[j].replace('\n', ' '), row[j])
+
     # filter some stuff
     size = all_packages.size()
 
@@ -126,15 +143,13 @@ def main():
     for i in range(1, all_packages.size() + 1):
         pack_id = all_packages.get_package(i).get('Package ID')
         address = all_packages.get_package(i).get('Delivery Address')
-        label_index = locate_df_index(distances_df, address)
-        new_label = distances_df.iloc[label_index][1]
-
-        if type(new_label) is not list:
-            new_label = [new_label]
+        new_label = stop_map.get_full_label(address)
 
         new_label.append(str(pack_id))
 
-        distances_df.iloc[label_index][1] = new_label
+        stop_map.update_vertex(address, new_label)
+
+    # Remove stops that don't have packages? (In this case there aren't any, but it would be useful for future proofing)
 
     # Create the routes
     max_miles = 140  # Per project requirements (for all trucks combined)
@@ -142,17 +157,85 @@ def main():
     start_time = "8:00:00 am"
 
     # Generate every possible route? No sir
-    possible_routes = []
-    used = []
-    curr_packages = []
-    starting_stop = None
-    curr_route = []
+    possible_routes = HashIt()
+    undelivered = list(range(1, all_packages.size() + 1))
+    used_stops = []
 
-    # find a route that matches paired
+    for i in stop_map.labels:
+        packages = []
+        new_route = []
+        length = 0
 
-        # go based on closest point until 16 packages has been met then return to the hub
+        if "HUB" not in i[1]:
+            new_route.append(stop_map.labels[0])
+            new_route.append(i)
+
+            # Set inital length from hub to first stop
+            length += stop_map.get_weight(stop_map.labels[0][1], i[1])
+
+            if length == 0 or length == math.inf:
+                length = 0
+                length += stop_map.get_weight(i[1], stop_map.labels[0][1])
+
+            # Save the packages
+            packages += i[2:]
+
+            # Build the route until 16 package limit is reached
+            while len(packages) < 16:
+                next_stop = None
+                next_dist = math.inf
+
+                # find the next closest spot
+                for j in stop_map.labels:
+                    test_dist = stop_map.get_weight(new_route[-1][1], j[1])
+
+                    if test_dist < next_dist and j not in new_route:
+                        next_stop = j
+                        next_dist = test_dist
+
+                    test_dist = stop_map.get_weight(j[1], new_route[-1][1])
+
+                    if test_dist < next_dist and j not in new_route:
+                        next_stop = j
+                        next_dist = test_dist
+
+                # Make sure we aren't packing to many packages
+                tmp = packages + next_stop[2:]
+
+                if len(tmp) > 16:
+                    break
+
+                # Save the new values
+                packages += next_stop[2:]
+                length += next_dist
+                new_route.append(next_stop)
+
+            # Add the hub as the last stop
+            new_route.append(stop_map.labels[0])
+
+            # Save the route as the first stop as the key with the whole route, packages and length as a value
+            possible_routes.set(new_route[1][1], [new_route, length, packages])
+
+    # find a route that matches paired out of the ideal efficient routes
+    paired_routes = []
+
+    for i in paired:
+        for j in stop_map.labels:
+            if "HUB" not in j[1] and i in possible_routes.get(j[1])[2]:
+                paired_routes.append(possible_routes.get(j[1]))
+
+    # if paired routes is empty, create one
 
     # Find a route that matches truck requirements
+    truck_specific_routes = []
+
+    for i in truck_specific:
+        if len(i) != 0:
+            for j in stop_map.labels:
+                if "HUB" not in j[1] and i in possible_routes.get(j[1])[2]:
+                    truck_specific_routes.append(possible_routes.get(j[1]))
+
+    # If truck specific routes is empty, create one
 
     # Find a route that matches delayed flights
 
