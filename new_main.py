@@ -145,7 +145,7 @@ def main():
         address = all_packages.get_package(i).get('Delivery Address')
         new_label = stop_map.get_full_label(address)
 
-        new_label.append(str(pack_id))
+        new_label.append(pack_id)
 
         stop_map.update_vertex(address, new_label)
 
@@ -158,6 +158,7 @@ def main():
 
     # Generate every possible route? No sir
     possible_routes = HashIt()
+    finalized_routes = HashIt()
     undelivered = list(range(1, all_packages.size() + 1))
     used_stops = []
 
@@ -216,28 +217,129 @@ def main():
             # Save the route as the first stop as the key with the whole route, packages and length as a value
             possible_routes.set(new_route[1][1], [new_route, length, packages])
 
-    # find a route that matches paired out of the ideal efficient routes
+    # find a route that matches paired out of the ideal efficient routes or has at least 75% of the packages
     paired_routes = []
+    paired_routes_final = []
 
     for i in paired:
         for j in stop_map.labels:
-            if "HUB" not in j[1] and i in possible_routes.get(j[1])[2]:
+            if "HUB" not in j[1] and (i in possible_routes.get(j[1])[2] or len(list(set(i).intersection(possible_routes.get(j[1])[2]))) >= len(i) * .70):
                 paired_routes.append(possible_routes.get(j[1]))
 
-    # if paired routes is empty, create one
+    # if paired routes is empty, create one or modify one to accomidate them. If there's one with say 70% of the packages, save it and modify it to accomidate the missing packages
+    # Find the most efficient out of the paired routes:
+    for i in paired:
+        efficient = None
+
+        for j in paired_routes:
+            if efficient is None and i != []:
+                efficient = j
+            elif len(list(set(i).intersection(j[2]))) >= len(list(set(i).intersection(efficient[2]))):
+                efficient = j
+
+        if efficient is not None:
+            paired_routes_final.append(efficient)
 
     # Find a route that matches truck requirements
     truck_specific_routes = []
+    truck_specific_routes_final = []
 
     for i in truck_specific:
         if len(i) != 0:
             for j in stop_map.labels:
-                if "HUB" not in j[1] and i in possible_routes.get(j[1])[2]:
+                if "HUB" not in j[1] and (i in possible_routes.get(j[1])[2] or len(list(set(i).intersection(possible_routes.get(j[1])[2]))) > len(i) * .70):
                     truck_specific_routes.append(possible_routes.get(j[1]))
 
-    # If truck specific routes is empty, create one
+    # If truck specific routes is empty, create one. If there's one with say 70% of the packages, save it and modify it to accomidate the missing packages (There are some for this one for sure with the given dataset)
+    # Find the most efficient out of the truck specific:
+    for i in truck_specific:
+        efficient = None
 
-    # Find a route that matches delayed flights
+        for j in truck_specific_routes:
+            if not i:
+                break
+
+            if efficient is None:
+                efficient = j
+            elif len(list(set(i).intersection(j[2]))) > len(list(set(i).intersection(efficient[2]))):
+                efficient = j
+
+        if efficient is not None:
+            truck_specific_routes_final.append(efficient)
+
+    # Find a route that matches delayed flights: for this, maybe create a small route with them, append a larger non time sensitive route to the end, have another short route for a truck to go and do then come back for these as they arrive at 9:05
+    delayed_route = []
+    delayed_labels = []
+
+    for i in stop_map.labels:
+        for j in delayed:
+            if j in i:
+                delayed_labels.append(i[1])
+
+    for i in delayed:
+        packages = []
+        new_route = []
+        length = 0
+
+        # Get the package stop
+        all_packages.get_package(i)
+
+        if "HUB" not in i[1]:
+            new_route.append(stop_map.labels[0])
+            new_route.append(i)
+
+            # Set inital length from hub to first stop
+            length += stop_map.get_weight(stop_map.labels[0][1], i[1])
+
+            if length == 0 or length == math.inf:
+                length = 0
+                length += stop_map.get_weight(i[1], stop_map.labels[0][1])
+
+            # Save the packages
+            packages += i[2:]
+
+            # Build the route until 16 package limit is reached
+            while len(packages) < 16:
+                next_stop = None
+                next_dist = math.inf
+
+                # find the next closest spot
+                for j in stop_map.labels:
+                    test_dist = stop_map.get_weight(new_route[-1][1], j[1])
+
+                    if test_dist < next_dist and j not in new_route:
+                        next_stop = j
+                        next_dist = test_dist
+
+                    test_dist = stop_map.get_weight(j[1], new_route[-1][1])
+
+                    if test_dist < next_dist and j not in new_route:
+                        next_stop = j
+                        next_dist = test_dist
+
+                # Make sure we aren't packing to many packages
+                tmp = packages + next_stop[2:]
+
+                if len(tmp) > 16:
+                    break
+
+                # Save the new values
+                packages += next_stop[2:]
+                length += next_dist
+                new_route.append(next_stop)
+
+            # Add the hub as the last stop
+            new_route.append(stop_map.labels[0])
+
+            # Make all package numbers integers
+            packages = [eval(i) for i in packages]
+
+            # Save the route as the first stop as the key with the whole route, packages and length as a value
+            possible_routes.set(new_route[1][1], [new_route, length, packages])
+
+    # make sure each package is only making it on one truck
+
+    # Add missed packages to smaller routes or create their own
 
     pass
 
