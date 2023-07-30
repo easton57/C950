@@ -14,6 +14,36 @@ def locate_df_index(df, key):
             return i
 
 
+def distance_calc(route: list, graph: Graph):
+    previous = None
+    distance = 0
+
+    for i in route:
+        if not previous:
+            previous = i
+        else:
+            distance += graph.get_weight(previous, i)
+
+    return distance
+
+
+def shortest_route(routes: list, graph: Graph):
+    # Check to see if there's one route or multiple
+    if len(routes) != 1:
+        shortest = None
+
+        for i in routes:
+            if not shortest:
+                shortest = i
+            elif distance_calc(shortest, graph) > distance_calc(i, graph):
+                shortest = i
+
+        return shortest
+    else:
+        return routes[0]
+
+
+
 def main():
     # Define our trucks
     total_trucks = 3
@@ -240,6 +270,9 @@ def main():
         if efficient is not None:
             paired_routes_final.append(efficient)
 
+    # Check to see if there's one route or multiple
+    paired_routes_final = shortest_route(paired_routes_final, stop_map)
+
     # Find a route that matches truck requirements
     truck_specific_routes = []
     truck_specific_routes_final = []
@@ -267,75 +300,34 @@ def main():
         if efficient is not None:
             truck_specific_routes_final.append(efficient)
 
+    truck_specific_routes_final = shortest_route(truck_specific_routes_final, stop_map)
+
     # Find a route that matches delayed flights: for this, maybe create a small route with them, append a larger non time sensitive route to the end, have another short route for a truck to go and do then come back for these as they arrive at 9:05
-    delayed_route = []
+    delayed_route = [stop_map.labels[0]]
     delayed_labels = []
+    length = 0
 
     for i in stop_map.labels:
         for j in delayed:
             if j in i:
-                delayed_labels.append(i[1])
+                delayed_labels.append(i)
 
-    for i in delayed:
-        packages = []
-        new_route = []
-        length = 0
+    # Find the closest
+    while len(delayed_route) < len(delayed) + 2:
+        closest = None
 
-        # Get the package stop
-        all_packages.get_package(i)
+        for i in delayed_labels:
+            if closest is None and i not in delayed_route:
+                closest = i
+            elif i not in delayed_route and \
+                    (stop_map.get_weight(delayed_route[-1][1], i[1]) < stop_map.get_weight(delayed_route[-1][1], closest[1]) or
+                    stop_map.get_weight(i[1], delayed_route[-1][1]) < stop_map.get_weight(closest[1], delayed_route[-1][1])):
+                closest = i
 
-        if "HUB" not in i[1]:
-            new_route.append(stop_map.labels[0])
-            new_route.append(i)
-
-            # Set inital length from hub to first stop
-            length += stop_map.get_weight(stop_map.labels[0][1], i[1])
-
-            if length == 0 or length == math.inf:
-                length = 0
-                length += stop_map.get_weight(i[1], stop_map.labels[0][1])
-
-            # Save the packages
-            packages += i[2:]
-
-            # Build the route until 16 package limit is reached
-            while len(packages) < 16:
-                next_stop = None
-                next_dist = math.inf
-
-                # find the next closest spot
-                for j in stop_map.labels:
-                    test_dist = stop_map.get_weight(new_route[-1][1], j[1])
-
-                    if test_dist < next_dist and j not in new_route:
-                        next_stop = j
-                        next_dist = test_dist
-
-                    test_dist = stop_map.get_weight(j[1], new_route[-1][1])
-
-                    if test_dist < next_dist and j not in new_route:
-                        next_stop = j
-                        next_dist = test_dist
-
-                # Make sure we aren't packing to many packages
-                tmp = packages + next_stop[2:]
-
-                if len(tmp) > 16:
-                    break
-
-                # Save the new values
-                packages += next_stop[2:]
-                length += next_dist
-                new_route.append(next_stop)
-
-            # Add the hub as the last stop
-            new_route.append(stop_map.labels[0])
-
-            # Make all package numbers integers
-            packages = [eval(i) for i in packages]
-
-            # Save the route as the first stop as the key with the whole route, packages and length as a value
-            possible_routes.set(new_route[1][1], [new_route, length, packages])
+        if len(delayed_route) == len(delayed) + 1:
+            delayed_route.append(stop_map.labels[0])
+        else:
+            delayed_route.append(closest)
 
     # make sure each package is only making it on one truck
 
