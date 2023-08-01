@@ -10,10 +10,38 @@ from threading import Thread
 from hashbrown import HashIt, Packages
 
 
+curr_time = [7, 45]
+sim = False
+
+
 # TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
 
 
-def locate_df_index(df, key):
+def sim_time(interval: int) -> None:
+    """ Cute little sim time function """
+    while True:
+        time.sleep(interval)
+        curr_time[1] += 1
+
+        if curr_time[1] == 60:
+            curr_time[1] = 0
+            curr_time[0] += 1
+
+
+def get_sim_time() -> str:
+    """ Return the simulation time as a string """
+    if curr_time[0] < 13 and curr_time[1] < 10:
+        return f"{curr_time[0]}:0{curr_time[1]} AM"
+    elif curr_time[0] >= 13 and curr_time[1] < 10:
+        return f"{curr_time[0] - 12}:0{curr_time[1]} PM"
+    elif curr_time[0] >= 13 and curr_time[1] > 10:
+        return f"{curr_time[0] - 12}:{curr_time[1]} PM"
+
+    return f"{curr_time[0]}:{curr_time[1]} AM"
+
+
+def locate_df_index(df, key) -> int:
+    """ Locate the index of data within the dataframe """
     for i in range(len(df.index)):
         if key in df.iloc[i][1][0] or key in df.iloc[i][0]:
             return i
@@ -21,7 +49,8 @@ def locate_df_index(df, key):
             return i
 
 
-def distance_calc(route: list, graph: Graph):
+def distance_calc(route: list, graph: Graph) -> float:
+    """ Calculate the distance traveled of the given route """
     previous = None
     distance = 0
 
@@ -31,15 +60,13 @@ def distance_calc(route: list, graph: Graph):
         else:
             distance_tmp = graph.get_weight(i[1], previous[1])
 
-            if distance_tmp == math.inf:
-                distance_tmp = graph.get_weight(previous[1], i[1])
-
             distance += distance_tmp
 
     return distance
 
 
-def shortest_route(routes: list, graph: Graph):
+def shortest_route(routes: list, graph: Graph) -> list:
+    """ Find the possibly shortest route with the given packages """
     # Check to see if there's one route or multiple
     if len(routes) != 1:
         shortest = None
@@ -55,7 +82,8 @@ def shortest_route(routes: list, graph: Graph):
         return routes[0]
 
 
-def get_route_packages(route):
+def get_route_packages(route) -> list:
+    """ Get packages from the stops in the graph """
     packages = []
 
     for i in route:
@@ -64,7 +92,7 @@ def get_route_packages(route):
     return packages
 
 
-def create_route(packages: list, graph: Graph):
+def create_route(packages: list, graph: Graph) -> list:
     """ Create a route based on packages that are passed in """
     route = [graph.labels[0]]
     labels = []
@@ -95,6 +123,7 @@ def create_route(packages: list, graph: Graph):
 
 
 def insert_package(package: int, routes: list, graph: Graph):
+    """ Insert package in the most efficient spot in the given route """
     most_efficient_route = None
     added_routes = []
 
@@ -108,7 +137,7 @@ def insert_package(package: int, routes: list, graph: Graph):
     return most_efficient_route
 
 
-def execute_route(truck: Truck, graph: Graph, sim: bool):
+def execute_route(truck: Truck, graph: Graph):
     """ Function to execute the route """
     previous_stop = truck.route[0][0]
     distance_traveled = 0
@@ -116,13 +145,15 @@ def execute_route(truck: Truck, graph: Graph, sim: bool):
     speed_per_min = truck.speed / 60
     minute_length = .5  # Time in seconds
 
+    # loop until it's go time
+    if curr_time[0] <= 8:
+        time.sleep(1/4)
+
+    # Our execution loop to mark packages as delivered and track the distance traveled
     for i in range(1, len(truck.route[0])):
         next_stop = truck.route[0][i]
 
-        if graph.get_weight(next_stop[1], previous_stop[1]) == math.inf:
-            stop_distance += graph.get_weight(previous_stop[1], next_stop[1])
-        else:
-            stop_distance += graph.get_weight(next_stop[1], previous_stop[1])
+        stop_distance += graph.get_weight(next_stop[1], previous_stop[1])
 
         while distance_traveled <= stop_distance:
             distance_traveled += speed_per_min
@@ -144,6 +175,7 @@ def execute_route(truck: Truck, graph: Graph, sim: bool):
         previous_stop = next_stop
 
 
+# noinspection DuplicatedCode
 def main():
     # Define our trucks
     total_trucks = 3
@@ -153,7 +185,11 @@ def main():
         trucks.append(Truck())
 
     # Simulation variable, False, follows true time of day, True, 1 minute = 1 second
-    sim_routes = True
+    global sim
+    sim = True
+
+    if sim:
+        sim_time_thread = Thread(target=sim_time, args=())
 
     # Define our packages hashmap
     all_packages = Packages()
@@ -208,6 +244,7 @@ def main():
         for j in range(2, 29):
             if not math.isnan(row[j]):
                 stop_map.add_edge(row[0], distances_headers.iloc[j].replace('\n', ' '), row[j])
+                stop_map.add_edge(distances_headers.iloc[j].replace('\n', ' '), row[0], row[j])  # Add the reverse edge
 
     # filter some stuff
     size = all_packages.size()
@@ -218,9 +255,11 @@ def main():
     truck_specific = []
     wrong_address = []
 
+    # Create our trucks
     for i in range(total_trucks):
         truck_specific.append([])
 
+    # Add our packages to categories
     for i in range(1, size + 1):
         curr_pack = all_packages.get_package(i)
 
@@ -251,9 +290,6 @@ def main():
             print(f"Package with id {i} has no notes!")
             size += 1
 
-    # some var cleanup for my sake
-    del curr_pack, distances_headers, packages_headers, distances, packages, size, row, i, j, num, package_id, deliv_list
-
     # Merge paired packages list's where things are common
     for i in paired:
         for j in i:
@@ -279,12 +315,8 @@ def main():
 
         stop_map.update_vertex(address, new_label)
 
-    # Remove stops that don't have packages? (In this case there aren't any, but it would be useful for future proofing)
-
     # Create the routes
     max_miles = 140  # Per project requirements (for all trucks combined)
-    mpm = trucks[0].speed / 60
-    start_time = "8:00:00 am"
 
     # Generate every possible route? No sir
     possible_routes = HashIt()
@@ -299,12 +331,8 @@ def main():
             new_route.append(stop_map.labels[0])
             new_route.append(i)
 
-            # Set inital length from hub to first stop
+            # Set initial length from hub to first stop
             length += stop_map.get_weight(stop_map.labels[0][1], i[1])
-
-            if length == 0 or length == math.inf:
-                length = 0
-                length += stop_map.get_weight(i[1], stop_map.labels[0][1])
 
             # Save the packages
             packages += i[2:]
@@ -317,12 +345,6 @@ def main():
                 # find the next closest spot
                 for j in stop_map.labels:
                     test_dist = stop_map.get_weight(new_route[-1][1], j[1])
-
-                    if test_dist < next_dist and j not in new_route:
-                        next_stop = j
-                        next_dist = test_dist
-
-                    test_dist = stop_map.get_weight(j[1], new_route[-1][1])
 
                     if test_dist < next_dist and j not in new_route:
                         next_stop = j
@@ -354,8 +376,7 @@ def main():
             if "HUB" not in j[1] and (i in possible_routes.get(j[1])[2] or len(list(set(i).intersection(possible_routes.get(j[1])[2]))) >= len(i) * .70):
                 paired_routes.append(possible_routes.get(j[1]))
 
-    # if paired routes is empty, create one or modify one to accomidate them. If there's one with say 70% of the packages, save it and modify it to accomidate the missing packages
-    # Find the most efficient out of the paired routes:
+    # Find the most efficient out of the paired routes, save them if 70% of packages match:
     for i in paired:
         efficient = None
 
@@ -389,8 +410,7 @@ def main():
                 if "HUB" not in j[1] and (i in possible_routes.get(j[1])[2] or len(list(set(i).intersection(possible_routes.get(j[1])[2]))) > len(i) * .70):
                     truck_specific_routes.append(possible_routes.get(j[1]))
 
-    # If truck specific routes is empty, create one. If there's one with say 70% of the packages, save it and modify it to accomidate the missing packages (There are some for this one for sure with the given dataset)
-    # Find the most efficient out of the truck specific:
+    # Find the most efficient out of the truck specific, save them if 70% of packages match:
     for i in truck_specific:
         efficient = None
 
@@ -416,7 +436,7 @@ def main():
     truck_specific_routes_final = [create_route(new_pack, stop_map), 0, new_pack]
     truck_specific_routes_final[1] = distance_calc(truck_specific_routes_final[0], stop_map)
 
-    # Find a route that matches delayed flights: for this, maybe create a small route with them, append a larger non time sensitive route to the end, have another short route for a truck to go and do then come back for these as they arrive at 9:05
+    # Find a route that matches delayed flights
     delayed_route = [create_route(delayed, stop_map), 0, delayed]
     delayed_route[1] = distance_calc(delayed_route[0], stop_map)
 
@@ -432,6 +452,8 @@ def main():
     Delayed
     Truck_specific
     Paired
+    
+    Need to add time critical
     """
 
     # Delayed Checks
@@ -444,13 +466,11 @@ def main():
         paired_routes_final[0] = create_route(paired_routes_final[2], stop_map)
         paired_routes_final[1] = distance_calc(paired_routes_final[0], stop_map)
 
-    # Truck Specific Checks
+    # Truck Specific Checks. Paired should all be good after this point theoretically
     if len(set(truck_specific_routes_final[2]).intersection(set(paired_routes_final[2]))) != 0:
         paired_routes_final[2] = [*set(paired_routes_final[2]).difference(truck_specific_routes_final[2])]
         paired_routes_final[0] = create_route(paired_routes_final[2], stop_map)
         paired_routes_final[1] = distance_calc(paired_routes_final[0], stop_map)
-
-    # Paired should all be good at this point theoretically
 
     # Add missed packages to smaller routes or create their own
     finalized_routes = [paired_routes_final, truck_specific_routes_final, delayed_route]
@@ -478,14 +498,15 @@ def main():
 
     # Make a route with the remaining
     if len(undelivered) > 0:
-        pass  # Do something eventually
+        pass  # Do something eventually maybe a new route
 
     # make sure we are good on our miles
     if finalized_routes[0][1] + finalized_routes[1][1] + finalized_routes[2][1] < max_miles:
         print("YES WE ARE GOOD ON MILES")
+    else:
+        print("DAMN IT *Schmidt impersonation*")
 
-    # Change the status of each package
-    # Start with truck specific
+    # Change the status of each package, start with truck specific
     for i in finalized_routes:
         for j in range(total_trucks):
             if len(set(i[2]).intersection(set(truck_specific[j]))) > 0 and len(trucks[j].packages) == 0:
@@ -508,9 +529,8 @@ def main():
                 break
 
     # Execute the routes
-    # Just testing one route at the moment
     for i in trucks:
-        Thread(target=execute_route, args=(i, stop_map, sim_routes)).start()
+        Thread(target=execute_route, args=(i, stop_map)).start()
 
     # Print the progress in the terminal
 
