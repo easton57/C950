@@ -122,7 +122,7 @@ def create_route(packages: list, graph: Graph) -> list:
     return route
 
 
-def insert_package(package: int, routes: list, graph: Graph):
+def insert_package(package: int, routes: list, graph: Graph) -> list:
     """ Insert package in the most efficient spot in the given route """
     most_efficient_route = None
     added_routes = []
@@ -137,7 +137,7 @@ def insert_package(package: int, routes: list, graph: Graph):
     return most_efficient_route
 
 
-def execute_route(truck: Truck, graph: Graph):
+def execute_route(truck: Truck, graph: Graph) -> None:
     """ Function to execute the route """
     previous_stop = truck.route[0][0]
     distance_traveled = 0
