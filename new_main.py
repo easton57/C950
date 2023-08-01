@@ -1,9 +1,16 @@
 # Easton Seidel: 007806406
 import math
+import copy
+import time
+
 import pandas as pd
 from graphs import Graph
 from truck import Truck
+from threading import Thread
 from hashbrown import HashIt, Packages
+
+
+# TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
 
 
 def locate_df_index(df, key):
@@ -22,7 +29,12 @@ def distance_calc(route: list, graph: Graph):
         if not previous:
             previous = i
         else:
-            distance += graph.get_weight(previous, i)
+            distance_tmp = graph.get_weight(i[1], previous[1])
+
+            if distance_tmp == math.inf:
+                distance_tmp = graph.get_weight(previous[1], i[1])
+
+            distance += distance_tmp
 
     return distance
 
@@ -42,6 +54,94 @@ def shortest_route(routes: list, graph: Graph):
     else:
         return routes[0]
 
+
+def get_route_packages(route):
+    packages = []
+
+    for i in route:
+        packages += i[2:]
+
+    return packages
+
+
+def create_route(packages: list, graph: Graph):
+    """ Create a route based on packages that are passed in """
+    route = [graph.labels[0]]
+    labels = []
+
+    # Get the labels for the delayed package
+    for i in graph.labels:
+        for j in packages:
+            if j in i and i not in labels:
+                labels.append(i)
+
+    # Find the closest
+    while len(labels) > 0:
+        closest = None
+
+        for i in labels:
+            if closest is None and i not in route:
+                closest = i
+            elif i not in route and (graph.get_weight(route[-1][1], i[1]) < graph.get_weight(route[-1][1], closest[1])
+                                     or graph.get_weight(i[1], route[-1][1]) < graph.get_weight(closest[1], route[-1][1])):
+                closest = i
+
+        route.append(closest)
+        labels.remove(closest)
+
+    route.append(graph.labels[0])
+
+    return route
+
+
+def insert_package(package: int, routes: list, graph: Graph):
+    most_efficient_route = None
+    added_routes = []
+
+    for i in routes:
+        added_routes.append([create_route(i[2] + package, graph), distance_calc(create_route(i[2] + package, graph), graph), i[2] + package])
+
+    for i in added_routes:
+        if not added_routes or (i[1] < most_efficient_route[1] and len(i[2]) <= 16):
+            most_efficient_route = i
+
+    return most_efficient_route
+
+
+def execute_route(truck: Truck, graph: Graph, sim: bool):
+    """ Function to execute the route """
+    previous_stop = truck.route[0][0]
+    distance_traveled = 0
+    stop_distance = 0
+    speed_per_min = truck.speed / 60
+    minute_length = .5  # Time in seconds
+
+    for i in range(1, len(truck.route[0])):
+        next_stop = truck.route[0][i]
+
+        if graph.get_weight(next_stop[1], previous_stop[1]) == math.inf:
+            stop_distance += graph.get_weight(previous_stop[1], next_stop[1])
+        else:
+            stop_distance += graph.get_weight(next_stop[1], previous_stop[1])
+
+        while distance_traveled <= stop_distance:
+            distance_traveled += speed_per_min
+
+            if sim:
+                time.sleep(minute_length)
+            else:
+                # Do the stuff for not simulation. Check the time and such
+                pass
+
+        # Mark the packages as delivered
+        for j in next_stop[2:]:
+            for k in truck.packages:
+                if k.get("Package ID") == j:  # TODO: Check delivery time to make sure the package isn't making it late
+                    k.set("Delivery Status", "Package Delivered")
+                    break
+
+        # Clear the variables that we have here
+        previous_stop = next_stop
 
 
 def main():
@@ -189,8 +289,6 @@ def main():
     # Generate every possible route? No sir
     possible_routes = HashIt()
     finalized_routes = HashIt()
-    undelivered = list(range(1, all_packages.size() + 1))
-    used_stops = []
 
     for i in stop_map.labels:
         packages = []
@@ -273,6 +371,14 @@ def main():
     # Check to see if there's one route or multiple
     paired_routes_final = shortest_route(paired_routes_final, stop_map)
 
+    # Add any missing packages
+    # TODO: THis will need to be handled better too refer to note below for the too part
+    paired_routes_final[2] += paired[0]
+    new_pack = [*set(paired_routes_final[2])]
+    new_pack.sort()
+    paired_routes_final = [create_route(new_pack, stop_map), 0, new_pack]
+    paired_routes_final[1] = distance_calc(paired_routes_final[0], stop_map)
+
     # Find a route that matches truck requirements
     truck_specific_routes = []
     truck_specific_routes_final = []
@@ -300,39 +406,117 @@ def main():
         if efficient is not None:
             truck_specific_routes_final.append(efficient)
 
+    # TODO: Need to handle this a bit differently. This will create issues if there are multiple trucks with requirements
     truck_specific_routes_final = shortest_route(truck_specific_routes_final, stop_map)
 
+    # Add any missing packages
+    truck_specific_routes_final[2] += truck_specific[1]
+    new_pack = [*set(truck_specific_routes_final[2])]
+    new_pack.sort()
+    truck_specific_routes_final = [create_route(new_pack, stop_map), 0, new_pack]
+    truck_specific_routes_final[1] = distance_calc(truck_specific_routes_final[0], stop_map)
+
     # Find a route that matches delayed flights: for this, maybe create a small route with them, append a larger non time sensitive route to the end, have another short route for a truck to go and do then come back for these as they arrive at 9:05
-    delayed_route = [stop_map.labels[0]]
-    delayed_labels = []
-    length = 0
-
-    for i in stop_map.labels:
-        for j in delayed:
-            if j in i:
-                delayed_labels.append(i)
-
-    # Find the closest
-    while len(delayed_route) < len(delayed) + 2:
-        closest = None
-
-        for i in delayed_labels:
-            if closest is None and i not in delayed_route:
-                closest = i
-            elif i not in delayed_route and \
-                    (stop_map.get_weight(delayed_route[-1][1], i[1]) < stop_map.get_weight(delayed_route[-1][1], closest[1]) or
-                    stop_map.get_weight(i[1], delayed_route[-1][1]) < stop_map.get_weight(closest[1], delayed_route[-1][1])):
-                closest = i
-
-        if len(delayed_route) == len(delayed) + 1:
-            delayed_route.append(stop_map.labels[0])
-        else:
-            delayed_route.append(closest)
+    delayed_route = [create_route(delayed, stop_map), 0, delayed]
+    delayed_route[1] = distance_calc(delayed_route[0], stop_map)
 
     # make sure each package is only making it on one truck
+    undelivered = list(range(1, all_packages.size() + 1))
+    on_routes = delayed + truck_specific_routes_final[2] + paired_routes_final[2]
+    on_routes = [*set(on_routes)]
+
+    undelivered = list(set(undelivered).difference(set(on_routes)))
+
+    """
+    Hierarchy:
+    Delayed
+    Truck_specific
+    Paired
+    """
+
+    # Delayed Checks
+    if len(set(delayed_route[2]).intersection(set(truck_specific_routes_final[2]))) != 0:
+        truck_specific_routes_final[2] = [*set(truck_specific_routes_final[2]).difference(delayed_route[2])]
+        truck_specific_routes_final[0] = create_route(truck_specific_routes_final[2], stop_map)
+        truck_specific_routes_final[1] = distance_calc(truck_specific_routes_final[0], stop_map)
+    if len(set(delayed_route[2]).intersection(set(paired_routes_final[2]))) != 0:
+        paired_routes_final[2] = [*set(paired_routes_final[2]).difference(delayed_route[2])]
+        paired_routes_final[0] = create_route(paired_routes_final[2], stop_map)
+        paired_routes_final[1] = distance_calc(paired_routes_final[0], stop_map)
+
+    # Truck Specific Checks
+    if len(set(truck_specific_routes_final[2]).intersection(set(paired_routes_final[2]))) != 0:
+        paired_routes_final[2] = [*set(paired_routes_final[2]).difference(truck_specific_routes_final[2])]
+        paired_routes_final[0] = create_route(paired_routes_final[2], stop_map)
+        paired_routes_final[1] = distance_calc(paired_routes_final[0], stop_map)
+
+    # Paired should all be good at this point theoretically
 
     # Add missed packages to smaller routes or create their own
+    finalized_routes = [paired_routes_final, truck_specific_routes_final, delayed_route]
+    temp_routes = copy.deepcopy(finalized_routes)
+    new_undelivered = copy.deepcopy(undelivered)
 
+    # First try to add to existing routes
+    for i in undelivered:
+        most_efficient_route = None
+        added_routes = []
+
+        for j in temp_routes:
+            j[2].append(i)
+            added_routes.append([create_route(j[2], stop_map), distance_calc(create_route(j[2], stop_map), stop_map), j[2]])
+
+        for j in range(len(added_routes)):
+            if (not most_efficient_route or added_routes[j][1] < added_routes[most_efficient_route][1]) and len(added_routes[j][2]) <= 16:
+                most_efficient_route = j
+
+        if most_efficient_route is not None:
+            finalized_routes[most_efficient_route] = copy.deepcopy(added_routes[most_efficient_route])
+            new_undelivered.remove(i)
+
+    undelivered = new_undelivered
+
+    # Make a route with the remaining
+    if len(undelivered) > 0:
+        pass  # Do something eventually
+
+    # make sure we are good on our miles
+    if finalized_routes[0][1] + finalized_routes[1][1] + finalized_routes[2][1] < max_miles:
+        print("YES WE ARE GOOD ON MILES")
+
+    # Change the status of each package
+    # Start with truck specific
+    for i in finalized_routes:
+        for j in range(total_trucks):
+            if len(set(i[2]).intersection(set(truck_specific[j]))) > 0 and len(trucks[j].packages) == 0:
+                trucks[j].route = i
+
+                for k in i[2]:
+                    trucks[j].add_package(all_packages.get_package(k))
+                    all_packages.get_package(k).set("Delivery Status", f"Package is on truck {j + 1} for delivery")
+                break
+            elif len(trucks[j].packages) == 0:
+                for k in i[2]:
+                    if type(all_packages.get_package(k).get("Special Note")) != str or 'Delayed' not in all_packages.get_package(k).get("Special Note"):
+                        trucks[j].route = i
+                        trucks[j].add_package(all_packages.get_package(k))
+                        all_packages.get_package(k).set("Delivery Status", f"Package is on truck {j + 1} for delivery")
+                    else:
+                        trucks[j].route = i
+                        trucks[j].add_package(all_packages.get_package(k))
+                        all_packages.get_package(k).set("Delivery Status", f"truck {j + 1} waiting for arrival")
+                break
+
+    # Execute the routes
+    # Just testing one route at the moment
+    for i in trucks:
+        Thread(target=execute_route, args=(i, stop_map, sim_routes)).start()
+
+    # Print the progress in the terminal
+
+    # Make sure it's all done by the required time.
+
+    # TODO: When timing is inevitably a problem, take the existing routes, sort by delivery time, start with the earliest and closest and expand from there. Maybe even start making the routes based on that
     pass
 
 
