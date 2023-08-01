@@ -6,8 +6,7 @@ class Truck:
         self.drivers = 2
         self.speed = 18  # in mph
         self.status = "Parked"
-        self.out_route = []
-        self.return_route = []
+        self.route = []
         self.mileage = 0
 
     def add_package(self, new_package):
