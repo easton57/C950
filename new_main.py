@@ -3,22 +3,28 @@ import math
 import copy
 import time
 
+import sys
 import pandas as pd
+import datetime as dt
 from graphs import Graph
 from truck import Truck
 from threading import Thread
 from hashbrown import HashIt, Packages
 
 
-curr_time = [7, 45]
+interval = 0
+curr_time = [7, 30]
 sim = False
 
 
 # TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
 
 
-def sim_time(interval: int) -> None:
+def sim_time(new_interval: int) -> None:
     """ Cute little sim time function """
+    global interval
+    interval = new_interval
+
     while True:
         time.sleep(interval)
         curr_time[1] += 1
@@ -28,16 +34,9 @@ def sim_time(interval: int) -> None:
             curr_time[0] += 1
 
 
-def get_sim_time() -> str:
-    """ Return the simulation time as a string """
-    if curr_time[0] < 13 and curr_time[1] < 10:
-        return f"{curr_time[0]}:0{curr_time[1]} AM"
-    elif curr_time[0] >= 13 and curr_time[1] < 10:
-        return f"{curr_time[0] - 12}:0{curr_time[1]} PM"
-    elif curr_time[0] >= 13 and curr_time[1] > 10:
-        return f"{curr_time[0] - 12}:{curr_time[1]} PM"
-
-    return f"{curr_time[0]}:{curr_time[1]} AM"
+def get_sim_time() -> time:
+    """ Return the simulation time as a time """
+    return dt.time(curr_time[0], curr_time[1])
 
 
 def locate_df_index(df, key) -> int:
@@ -159,16 +158,21 @@ def execute_route(truck: Truck, graph: Graph) -> None:
             distance_traveled += speed_per_min
 
             if sim:
-                time.sleep(minute_length)
+                time.sleep(interval)
             else:
                 # Do the stuff for not simulation. Check the time and such
                 pass
 
         # Mark the packages as delivered
+        deliv_time = get_sim_time()
+
         for j in next_stop[2:]:
             for k in truck.packages:
-                if k.get("Package ID") == j:  # TODO: Check delivery time to make sure the package isn't making it late
-                    k.set("Delivery Status", "Package Delivered")
+                if k.get("Package ID") == j and k.get("Delivery Deadline") != deliv_time:
+                    k.set("Delivery Status", f"Package Delivered at {deliv_time}")
+                    break
+                elif k.get("Package ID") == j and k.get("Delivery Deadline") == deliv_time:
+                    k.set("Delivery Status", f"Package Delivered at {deliv_time} ***LATE***")
                     break
 
         # Clear the variables that we have here
@@ -189,7 +193,8 @@ def main():
     sim = True
 
     if sim:
-        sim_time_thread = Thread(target=sim_time, args=())
+        sim_time_thread = Thread(target=sim_time, args=(1,))
+        sim_time_thread.start()
 
     # Define our packages hashmap
     all_packages = Packages()
@@ -532,7 +537,7 @@ def main():
     for i in trucks:
         Thread(target=execute_route, args=(i, stop_map)).start()
 
-    # Print the progress in the terminal
+    # Print the progress in the gui
 
     # Make sure it's all done by the required time.
 
@@ -542,3 +547,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+Some thoughts:
+
+When inevitably redoing the create route funciton, add the array's into it.
+
+Create a list of time critical
+Start making routes based on them, divide them evenly by the amount of trucks maybe? take the ones that are delayed out and make a separate route
+remove the time critical from the total list of packages
+check the selected package for relation to other lists add those packages after the fact, drop second to last stop or hwoever many is needed to get it under 16 packages
+return the total amount of lists
+"""
