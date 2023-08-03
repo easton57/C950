@@ -1,4 +1,5 @@
 # Easton Seidel: 007806406
+import datetime
 import math
 import copy
 import time
@@ -141,12 +142,11 @@ def execute_route(truck: Truck, graph: Graph) -> None:
     previous_stop = truck.route[0][0]
     distance_traveled = 0
     stop_distance = 0
-    speed_per_min = truck.speed / 60
-    minute_length = .5  # Time in seconds
+    speed_per_min = truck.speed / (60 / interval)
 
     # loop until it's go time
-    if curr_time[0] <= 8:
-        time.sleep(1/4)
+    while get_sim_time() <= truck.departure_time:
+        time.sleep(interval / 4)
 
     # Our execution loop to mark packages as delivered and track the distance traveled
     for i in range(1, len(truck.route[0])):
@@ -168,11 +168,11 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
         for j in next_stop[2:]:
             for k in truck.packages:
-                if k.get("Package ID") == j and k.get("Delivery Deadline") != deliv_time:
-                    k.set("Delivery Status", f"Package Delivered at {deliv_time}")
-                    break
-                elif k.get("Package ID") == j and k.get("Delivery Deadline") == deliv_time:
-                    k.set("Delivery Status", f"Package Delivered at {deliv_time} ***LATE***")
+                if k.get("Package ID") == j:
+                    if type(k.get("Delivery Deadline")) == str:
+                        k.set("Delivery Status", f"Package Delivered at {deliv_time}")
+                    elif k.get("Delivery Deadline") < deliv_time:
+                        k.set("Delivery Status", f"Package Delivered at {deliv_time} ***LATE***")
                     break
 
         # Clear the variables that we have here
@@ -325,7 +325,6 @@ def main():
 
     # Generate every possible route? No sir
     possible_routes = HashIt()
-    finalized_routes = HashIt()
 
     for i in stop_map.labels:
         packages = []
@@ -520,6 +519,9 @@ def main():
                 for k in i[2]:
                     trucks[j].add_package(all_packages.get_package(k))
                     all_packages.get_package(k).set("Delivery Status", f"Package is on truck {j + 1} for delivery")
+
+                    if trucks[j].departure_time == math.inf:
+                        trucks[j].departure_time = datetime.time(8)
                 break
             elif len(trucks[j].packages) == 0:
                 for k in i[2]:
@@ -527,10 +529,16 @@ def main():
                         trucks[j].route = i
                         trucks[j].add_package(all_packages.get_package(k))
                         all_packages.get_package(k).set("Delivery Status", f"Package is on truck {j + 1} for delivery")
+
+                        if trucks[j].departure_time == math.inf:
+                            trucks[j].departure_time = datetime.time(8)
                     else:
                         trucks[j].route = i
                         trucks[j].add_package(all_packages.get_package(k))
                         all_packages.get_package(k).set("Delivery Status", f"truck {j + 1} waiting for arrival")
+
+                        if trucks[j].departure_time == math.inf or trucks[j].departure_time < datetime.time(9, 5):
+                            trucks[j].departure_time = datetime.time(9, 5)
                 break
 
     # Execute the routes
@@ -538,8 +546,6 @@ def main():
         Thread(target=execute_route, args=(i, stop_map)).start()
 
     # Print the progress in the gui
-
-    # Make sure it's all done by the required time.
 
     # TODO: When timing is inevitably a problem, take the existing routes, sort by delivery time, start with the earliest and closest and expand from there. Maybe even start making the routes based on that
     pass
@@ -552,11 +558,11 @@ if __name__ == "__main__":
 """
 Some thoughts:
 
-When inevitably redoing the create route funciton, add the array's into it.
+When inevitably redoing the create route function, add the array's into it.
 
 Create a list of time critical
 Start making routes based on them, divide them evenly by the amount of trucks maybe? take the ones that are delayed out and make a separate route
 remove the time critical from the total list of packages
-check the selected package for relation to other lists add those packages after the fact, drop second to last stop or hwoever many is needed to get it under 16 packages
+check the selected package for relation to other lists add those packages after the fact, drop second to last stop or however many is needed to get it under 16 packages
 return the total amount of lists
 """
