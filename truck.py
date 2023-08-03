@@ -3,7 +3,8 @@ import math
 
 
 class Truck:
-    def __init__(self):
+    def __init__(self, truck_id):
+        self.truck_id = truck_id
         self.packages = []
         self.drivers = 2
         self.speed = 18  # in mph
