@@ -20,28 +20,38 @@ curr_time = [7, 45]
 sim = False
 shutdown = False
 complete = False
-
+over_miles = False
+traveled_miles = 0
 
 # TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
 
 
 def update_table():
     """ Dynamically reset the table time and package status's """
-    global shutdown, complete
+    global shutdown, complete, over_miles, traveled_miles
 
     # Show a pop-up when the routes have finished being created and assigned
     if complete:
-        show_route_completed_popup()
+        messagebox.showinfo("Route Completed",
+                            "Routes are completed. Please allow them to finish executing after closing this pop-up.")
         complete = False
+
+    if over_miles:
+        messagebox.showerror("Over Miles!",
+                             "Created routes exceed the mile limit for your trucks. "
+                             "Please check the routes and try again.")
+        over_miles = False
 
     if not shutdown:
         # Update the time label with the current time or simulated time
         if sim:
             current_time = get_sim_time()
-            time_label.config(text=f"Current Time: {current_time.isoformat(timespec='minutes')}")
+            time_label.config(text=f"Current Time: {current_time.isoformat(timespec='minutes')}\t"
+                                   f"Miles Traveled: {format(traveled_miles, '5.2f')}")
         else:
             current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-            time_label.config(text="Current Time: " + current_time)
+            time_label.config(text="Current Time: " + current_time +
+                                   f"\tMiles Traveled: {format(traveled_miles, '5.2f')}")
 
         # Clear existing rows in the table
         table.delete(*table.get_children())
@@ -58,12 +68,6 @@ def update_table():
         root.after(1000, update_table)
     else:
         print("Shutting down application...")
-
-
-def show_route_completed_popup():
-    """ Message box for when the program finishes """
-    messagebox.showinfo("Route Completed",
-                        "Routes are completed. Please allow them to finish executing after closing this pop-up.")
 
 
 def on_close():
@@ -237,7 +241,7 @@ def insert_package(package: int, routes: list, graph: Graph) -> list:
 
 def execute_route(truck: Truck, graph: Graph) -> None:
     """ Function to execute the route """
-    global shutdown
+    global shutdown, traveled_miles
     previous_stop = truck.route[0][0]
     distance_traveled = 0
     stop_distance = 0
@@ -268,6 +272,7 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
         while distance_traveled <= stop_distance:
             distance_traveled += speed_per_min
+            traveled_miles += speed_per_min
 
             if sim:
                 time.sleep(interval)
@@ -295,7 +300,7 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
 # noinspection DuplicatedCode
 def main():
-    global all_packages, sim, shutdown, complete
+    global all_packages, sim, shutdown, complete, over_miles
 
     # Define our trucks
     total_trucks = 3
@@ -624,6 +629,7 @@ def main():
         print("YES WE ARE GOOD ON MILES")
     else:
         print("DAMN IT *Schmidt impersonation*")
+        over_miles = True
 
     # Change the status of each package, start with truck specific
     for i in finalized_routes:
