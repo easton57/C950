@@ -10,7 +10,7 @@ import pandas as pd
 import datetime as dt
 from graphs import Graph
 from truck import Truck
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from threading import Thread
 from hashbrown import HashIt, Packages
 
@@ -19,6 +19,7 @@ interval = 0
 curr_time = [7, 45]
 sim = False
 shutdown = False
+complete = False
 
 
 # TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
@@ -26,7 +27,12 @@ shutdown = False
 
 def update_table():
     """ Dynamically reset the table time and package status's """
-    global shutdown
+    global shutdown, complete
+
+    # Show a pop-up when the routes have finished being created and assigned
+    if complete:
+        show_route_completed_popup()
+        complete = False
 
     if not shutdown:
         # Update the time label with the current time or simulated time
@@ -52,6 +58,12 @@ def update_table():
         root.after(1000, update_table)
     else:
         print("Shutting down application...")
+
+
+def show_route_completed_popup():
+    """ Message box for when the program finishes """
+    messagebox.showinfo("Route Completed",
+                        "Routes are completed. Please allow them to finish executing after closing this pop-up.")
 
 
 def on_close():
@@ -280,7 +292,7 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
 # noinspection DuplicatedCode
 def main():
-    global all_packages, sim, shutdown
+    global all_packages, sim, shutdown, complete
 
     # Define our trucks
     total_trucks = 3
@@ -647,11 +659,7 @@ def main():
 
     # Create new threads for other routes if needed
 
-    # Loop and print something when they're all done
-    while len(threading.enumerate()) > 3:
-        if shutdown:
-            break
-
+    complete = True
     # TODO: When timing is inevitably a problem, take the existing routes, sort by delivery time, start with the earliest and closest and expand from there. Maybe even start making the routes based on that
 
 
