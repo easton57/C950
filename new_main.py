@@ -1,14 +1,16 @@
 # Easton Seidel: 007806406
+import sys
 import datetime
 import math
 import copy
 import time
-
-import sys
+import threading
+import tkinter as tk
 import pandas as pd
 import datetime as dt
 from graphs import Graph
 from truck import Truck
+from tkinter import ttk
 from threading import Thread
 from hashbrown import HashIt, Packages
 
@@ -16,9 +18,83 @@ from hashbrown import HashIt, Packages
 interval = 0
 curr_time = [7, 30]
 sim = False
+shutdown = False
 
 
 # TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
+
+
+def update_table():
+    """ Dynamically reset the table time and package status's """
+    # Update the time label with the current time or simulated time
+    if sim:
+        current_time = get_sim_time()
+        time_label.config(text=f"Current Time: {current_time}")
+    else:
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        time_label.config(text="Current Time: " + current_time)
+
+    # Clear existing rows in the table
+    table.delete(*table.get_children())
+
+    # Insert data into the table
+    for i in range(1, all_packages.size() + 1):
+        package = [all_packages.get_package(i).get("Package ID"),
+                   all_packages.get_package(i).get("Delivery Deadline"),
+                   all_packages.get_package(i).get("Delivery Status"),
+                   all_packages.get_package(i).get("Special Note")]
+        table.insert("", "end", values=package)
+
+    # Schedule the update_table function to run again after 1 second
+    root.after(1000, update_table)
+
+
+def on_close():
+    """ Close function for when the button is pressed """
+    root.destroy()
+    sys.exit()
+
+
+def create_package_table():
+    """ Function for our status window """
+    global root, table, time_label
+    root = tk.Tk()
+    root.title("Package Status")
+
+    # Set dynamic adjustments
+    root.pack_propagate(True)
+
+    # Set close button to stop the program
+    root.protocol("WM_DELETE_WINDOW", on_close)
+
+    # Set the initial window height to 500 pixels
+    window_height = 500
+
+    # Set the initial window size
+    root.geometry(f"{775}x{window_height}")
+
+    time_label = tk.Label(root, text="", font=("Helvetica", 12))
+    time_label.pack()
+
+    table = ttk.Treeview(root,
+                         columns=("Package ID", "Delivery Deadline", "Delivery Status", "Special Note"),
+                         show="headings", height=400)
+
+    # Define column headings
+    table.heading("Package ID", text="Package ID")
+    table.heading("Delivery Deadline", text="Delivery Deadline")
+    table.heading("Delivery Status", text="Delivery Status")
+    table.heading("Special Note", text="Special Note")
+
+    # Define column widths
+    table.column("Package ID", width=75)
+    table.column("Delivery Deadline", width=100)
+    table.column("Delivery Status", width=250)
+    table.column("Special Note", width=350)
+
+    table.pack(fill="both", expand=True)
+    update_table()
+    root.mainloop()
 
 
 def sim_time(new_interval: int) -> None:
@@ -148,6 +224,11 @@ def execute_route(truck: Truck, graph: Graph) -> None:
     while get_sim_time() <= truck.departure_time:
         time.sleep(interval / 4)
 
+    # Change status of those that are delayed
+    for i in truck.packages:
+        if "waiting for arrival" in i.get("Delivery Status"):
+            i.set("Delivery Status", f"Package is on truck {truck.truck_id} for delivery")
+
     # Our execution loop to mark packages as delivered and track the distance traveled
     for i in range(1, len(truck.route[0])):
         next_stop = truck.route[0][i]
@@ -169,10 +250,12 @@ def execute_route(truck: Truck, graph: Graph) -> None:
         for j in next_stop[2:]:
             for k in truck.packages:
                 if k.get("Package ID") == j:
-                    if type(k.get("Delivery Deadline")) == str:
+                    if type(k.get("Delivery Deadline")) == str or k.get("Delivery Deadline") >= deliv_time:
                         k.set("Delivery Status", f"Package Delivered at {deliv_time}")
+                        truck.packages.remove(k)
                     elif k.get("Delivery Deadline") < deliv_time:
                         k.set("Delivery Status", f"Package Delivered at {deliv_time} ***LATE***")
+                        truck.packages.remove(k)
                     break
 
         # Clear the variables that we have here
@@ -181,23 +264,21 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
 # noinspection DuplicatedCode
 def main():
+    global all_packages, sim
+
     # Define our trucks
     total_trucks = 3
     trucks = []
 
     for i in range(total_trucks):
-        trucks.append(Truck())
+        trucks.append(Truck(i + 1))
 
     # Simulation variable, False, follows true time of day, True, 1 minute = 1 second
-    global sim
     sim = True
 
     if sim:
         sim_time_thread = Thread(target=sim_time, args=(1,))
         sim_time_thread.start()
-
-    # Define our packages hashmap
-    all_packages = Packages()
 
     # import our xlsx files
     distances = pd.read_excel("./project_files/WGUPS Distance Table.xlsx")
@@ -226,6 +307,9 @@ def main():
     # Assign Dataframe headers
     distances_df = distances_df.set_axis(distances_headers, axis=1)
     packages_df = packages_df.set_axis(packages_headers, axis=1)
+
+    # Define our packages hashmap
+    all_packages = Packages()
 
     # Plug packages into our hashmap
     for i in range(len(packages_df.index)):
@@ -518,7 +602,7 @@ def main():
 
                 for k in i[2]:
                     trucks[j].add_package(all_packages.get_package(k))
-                    all_packages.get_package(k).set("Delivery Status", f"Package is on truck {j + 1} for delivery")
+                    all_packages.get_package(k).set("Delivery Status", f"Package is on truck {trucks[j].truck_id} for delivery")
 
                     if trucks[j].departure_time == math.inf:
                         trucks[j].departure_time = datetime.time(8)
@@ -528,14 +612,14 @@ def main():
                     if type(all_packages.get_package(k).get("Special Note")) != str or 'Delayed' not in all_packages.get_package(k).get("Special Note"):
                         trucks[j].route = i
                         trucks[j].add_package(all_packages.get_package(k))
-                        all_packages.get_package(k).set("Delivery Status", f"Package is on truck {j + 1} for delivery")
+                        all_packages.get_package(k).set("Delivery Status", f"Package is on truck {trucks[j].truck_id} for delivery")
 
                         if trucks[j].departure_time == math.inf:
                             trucks[j].departure_time = datetime.time(8)
                     else:
                         trucks[j].route = i
                         trucks[j].add_package(all_packages.get_package(k))
-                        all_packages.get_package(k).set("Delivery Status", f"truck {j + 1} waiting for arrival")
+                        all_packages.get_package(k).set("Delivery Status", f"truck {trucks[j].truck_id} waiting for arrival")
 
                         if trucks[j].departure_time == math.inf or trucks[j].departure_time < datetime.time(9, 5):
                             trucks[j].departure_time = datetime.time(9, 5)
@@ -545,14 +629,22 @@ def main():
     for i in trucks:
         Thread(target=execute_route, args=(i, stop_map)).start()
 
-    # Print the progress in the gui
+    # Create new threads for other routes if needed
+
+    # Loop and print something when they're all done
+    while len(threading.enumerate()) > 3:
+        pass
 
     # TODO: When timing is inevitably a problem, take the existing routes, sort by delivery time, start with the earliest and closest and expand from there. Maybe even start making the routes based on that
-    pass
+    input("Routes simulated, press enter to close the program...")
+
+    exit(0)
 
 
 if __name__ == "__main__":
-    main()
+    threading.Thread(target=main).start()
+    time.sleep(1)
+    create_package_table()
 
 
 """
