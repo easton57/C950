@@ -1,4 +1,6 @@
 # Truck object file
+import math
+
 
 class Truck:
     def __init__(self):
@@ -8,6 +10,7 @@ class Truck:
         self.status = "Parked"
         self.route = []
         self.mileage = 0
+        self.departure_time = math.inf
 
     def add_package(self, new_package):
         if len(self.packages) == 16:
