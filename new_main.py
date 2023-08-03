@@ -16,7 +16,7 @@ from hashbrown import HashIt, Packages
 
 
 interval = 0
-curr_time = [7, 30]
+curr_time = [7, 45]
 sim = False
 shutdown = False
 
@@ -26,31 +26,38 @@ shutdown = False
 
 def update_table():
     """ Dynamically reset the table time and package status's """
-    # Update the time label with the current time or simulated time
-    if sim:
-        current_time = get_sim_time()
-        time_label.config(text=f"Current Time: {current_time}")
+    global shutdown
+
+    if not shutdown:
+        # Update the time label with the current time or simulated time
+        if sim:
+            current_time = get_sim_time()
+            time_label.config(text=f"Current Time: {current_time.isoformat(timespec='minutes')}")
+        else:
+            current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            time_label.config(text="Current Time: " + current_time)
+
+        # Clear existing rows in the table
+        table.delete(*table.get_children())
+
+        # Insert data into the table
+        for i in range(1, all_packages.size() + 1):
+            package = [all_packages.get_package(i).get("Package ID"),
+                       all_packages.get_package(i).get("Delivery Deadline"),
+                       all_packages.get_package(i).get("Delivery Status"),
+                       all_packages.get_package(i).get("Special Note")]
+            table.insert("", "end", values=package)
+
+        # Schedule the update_table function to run again after 1 second
+        root.after(1000, update_table)
     else:
-        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-        time_label.config(text="Current Time: " + current_time)
-
-    # Clear existing rows in the table
-    table.delete(*table.get_children())
-
-    # Insert data into the table
-    for i in range(1, all_packages.size() + 1):
-        package = [all_packages.get_package(i).get("Package ID"),
-                   all_packages.get_package(i).get("Delivery Deadline"),
-                   all_packages.get_package(i).get("Delivery Status"),
-                   all_packages.get_package(i).get("Special Note")]
-        table.insert("", "end", values=package)
-
-    # Schedule the update_table function to run again after 1 second
-    root.after(1000, update_table)
+        print("Shutting down application...")
 
 
 def on_close():
     """ Close function for when the button is pressed """
+    global shutdown
+    shutdown = True
     root.destroy()
     sys.exit()
 
@@ -99,10 +106,10 @@ def create_package_table():
 
 def sim_time(new_interval: int) -> None:
     """ Cute little sim time function """
-    global interval
+    global interval, shutdown
     interval = new_interval
 
-    while True:
+    while not shutdown:
         time.sleep(interval)
         curr_time[1] += 1
 
@@ -215,6 +222,7 @@ def insert_package(package: int, routes: list, graph: Graph) -> list:
 
 def execute_route(truck: Truck, graph: Graph) -> None:
     """ Function to execute the route """
+    global shutdown
     previous_stop = truck.route[0][0]
     distance_traveled = 0
     stop_distance = 0
@@ -222,6 +230,10 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
     # loop until it's go time
     while get_sim_time() <= truck.departure_time:
+        # check for shutdown call
+        if shutdown:
+            exit()
+
         time.sleep(interval / 4)
 
     # Change status of those that are delayed
@@ -231,6 +243,10 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
     # Our execution loop to mark packages as delivered and track the distance traveled
     for i in range(1, len(truck.route[0])):
+        # check for shutdown call
+        if shutdown:
+            exit()
+
         next_stop = truck.route[0][i]
 
         stop_distance += graph.get_weight(next_stop[1], previous_stop[1])
@@ -264,7 +280,7 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
 # noinspection DuplicatedCode
 def main():
-    global all_packages, sim
+    global all_packages, sim, shutdown
 
     # Define our trucks
     total_trucks = 3
@@ -633,12 +649,10 @@ def main():
 
     # Loop and print something when they're all done
     while len(threading.enumerate()) > 3:
-        pass
+        if shutdown:
+            break
 
     # TODO: When timing is inevitably a problem, take the existing routes, sort by delivery time, start with the earliest and closest and expand from there. Maybe even start making the routes based on that
-    input("Routes simulated, press enter to close the program...")
-
-    exit(0)
 
 
 if __name__ == "__main__":
