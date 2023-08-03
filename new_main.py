@@ -129,6 +129,9 @@ def sim_time(new_interval: int) -> None:
             curr_time[1] = 0
             curr_time[0] += 1
 
+        if curr_time[0] == 24:
+            break
+
 
 def get_sim_time() -> time:
     """ Return the simulation time as a time """
