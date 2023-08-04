@@ -142,15 +142,6 @@ def get_sim_time() -> time:
     return dt.time(curr_time[0], curr_time[1])
 
 
-def locate_df_index(df, key) -> int:
-    """ Locate the index of data within the dataframe """
-    for i in range(len(df.index)):
-        if key in df.iloc[i][1][0] or key in df.iloc[i][0]:
-            return i
-        elif key in df.iloc[i][1] or key in df.iloc[i][0]:
-            return i
-
-
 def distance_calc(route: list, graph: Graph) -> float:
     """ Calculate the distance traveled of the given route """
     previous = None
@@ -304,17 +295,13 @@ def main():
 
     # Define our trucks
     total_trucks = 3
-    trucks = []
-
-    for i in range(total_trucks):
-        trucks.append(Truck(i + 1))
+    trucks = [Truck(i + 1) for i in range(total_trucks)]
 
     # Simulation variable, False, follows true time of day, True, 1 minute = 1 second
     sim = True
 
     if sim:
-        sim_time_thread = Thread(target=sim_time, args=(1,))
-        sim_time_thread.start()
+        Thread(target=sim_time, args=(1,)).start()
 
     # import our xlsx files
     distances = pd.read_excel("./project_files/WGUPS Distance Table.xlsx")
