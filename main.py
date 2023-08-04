@@ -23,8 +23,6 @@ complete = False
 over_miles = False
 traveled_miles = 0
 
-# TODO: Take into consideration delivery deadline when creating routes this means distance calculations will have to be proactive
-
 
 def update_table():
     """ Dynamically reset the table time and package status's """
@@ -185,7 +183,7 @@ def get_route_packages(route) -> list:
     return packages
 
 
-def create_route(packages: list, graph: Graph) -> list:
+def create_route(packages: list, graph: Graph) -> list:  # TODO: Make the package's with time criticality first
     """ Create a route based on packages that are passed in """
     route = [graph.labels[0]]
     labels = []
@@ -246,6 +244,8 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
         time.sleep(interval / 4)
 
+    # TODO: Check for a Wrong address package, place that package at the end of the route and recreate
+
     # Change status of those that are delayed
     for i in truck.packages:
         if "waiting for arrival" in i.get("Delivery Status"):
@@ -271,6 +271,8 @@ def execute_route(truck: Truck, graph: Graph) -> None:
                 # Do the stuff for not simulation. Check the time and such
                 pass
 
+        # TODO: If a wrong address is existing, check to see if the time is later, recreate the route
+
         # Mark the packages as delivered
         deliv_time = get_sim_time()
 
@@ -289,7 +291,6 @@ def execute_route(truck: Truck, graph: Graph) -> None:
         previous_stop = next_stop
 
 
-# noinspection DuplicatedCode
 def main():
     global all_packages, sim, shutdown, complete, over_miles
 
@@ -653,10 +654,9 @@ def main():
     for i in trucks:
         Thread(target=execute_route, args=(i, stop_map)).start()
 
-    # Create new threads for other routes if needed
+    # TODO: Create new threads for other routes if needed
 
     complete = True
-    # TODO: When timing is inevitably a problem, take the existing routes, sort by delivery time, start with the earliest and closest and expand from there. Maybe even start making the routes based on that
 
 
 if __name__ == "__main__":
