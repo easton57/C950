@@ -36,7 +36,7 @@ def update_table():
     # Show a pop-up when the routes have finished being created and assigned
     if complete:
         messagebox.showinfo("Route Completed",
-                            "Routes are completed. Please allow them to finish executing after closing this pop-up.")
+                            "Routes are completed and packages delivered.")
         complete = False
 
     if over_miles:
@@ -757,12 +757,17 @@ def main():
     while threading.active_count() > starting_threads:
         time.sleep(interval)
 
+    starting_threads = threading.active_count()
+
     # Make sure all packages are delivered
     for i in trucks:
         if len(i.packages) > 0:
             i.route[0] = create_route(i.route[2], stop_map)
-            execute_route(i, stop_map)
-            # Thread(target=execute_route, args=(i, stop_map)).start()
+            Thread(target=execute_route, args=(i, stop_map)).start()
+
+    # Loop until threads are done
+    while threading.active_count() > starting_threads:
+        time.sleep(interval)
 
     complete = True
 
@@ -771,16 +776,3 @@ if __name__ == "__main__":
     threading.Thread(target=main).start()
     time.sleep(1)
     create_package_table()
-
-
-"""
-Some thoughts:
-
-When inevitably redoing the create route function, add the array's into it.
-
-Create a list of time critical
-Start making routes based on them, divide them evenly by the amount of trucks maybe? take the ones that are delayed out and make a separate route
-remove the time critical from the total list of packages
-check the selected package for relation to other lists add those packages after the fact, drop second to last stop or however many is needed to get it under 16 packages
-return the total amount of lists
-"""
