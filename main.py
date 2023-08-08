@@ -702,13 +702,6 @@ def main():
     if len(undelivered) > 0:
         pass  # Do something eventually maybe a new route
 
-    # make sure we are good on our miles
-    if finalized_routes[0][1] + finalized_routes[1][1] + finalized_routes[2][1] < max_miles:
-        print("YES WE ARE GOOD ON MILES")
-    else:
-        print("DAMN IT *Schmidt impersonation*")
-        over_miles = True
-
     # Change the status of each package, start with truck specific
     for i in finalized_routes:
         for j in range(total_trucks):
