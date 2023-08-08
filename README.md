@@ -14,7 +14,7 @@ Keep in mind that the supervisor should be able to see, at assigned points, the 
 
 ~~•   There are no collisions.~~
 
-~~•   Three trucks and two drivers are available for deliveries. Each driver stays with the same truck as long as that truck is in service.~~
+•   Three trucks and two drivers are available for deliveries. Each driver stays with the same truck as long as that truck is in service.~~
 
 ~~•   Drivers leave the hub no earlier than 8:00 a.m., with the truck loaded, and can return to the hub for packages if needed.~~
 
