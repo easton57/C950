@@ -22,6 +22,11 @@ shutdown = False
 complete = False
 over_miles = False
 traveled_miles = 0
+delayed = []
+paired = []
+time_critical = []
+wrong_address = []
+all_packages = Packages()
 
 
 def update_table():
@@ -120,10 +125,10 @@ def create_package_table():
 
 def sim_time(new_interval: int) -> None:
     """ Cute little sim time function """
-    global interval, shutdown
+    global interval, shutdown, complete
     interval = new_interval
 
-    while not shutdown:
+    while not shutdown or not complete:
         time.sleep(interval)
         curr_time[1] += 1
 
@@ -183,16 +188,52 @@ def get_route_packages(route) -> list:
     return packages
 
 
-def create_route(packages: list, graph: Graph) -> list:  # TODO: Make the package's with time criticality first
+def create_route(packages: list, graph: Graph, first_stop: str = None) -> list:
     """ Create a route based on packages that are passed in """
+    global delayed, paired, time_critical, wrong_address
     route = [graph.labels[0]]
     labels = []
+    time_critical_labels = []
+    wrong_address_labels = []
+
+    if first_stop is not None:
+        route = [first_stop]
 
     # Get the labels for the delayed package
     for i in graph.labels:
         for j in packages:
-            if j in i and i not in labels:
+            if j in i and i not in labels \
+                    and j not in time_critical and i not in time_critical_labels \
+                    and j not in wrong_address and i not in wrong_address_labels:
                 labels.append(i)
+            elif j in i and i not in time_critical_labels \
+                    and j not in wrong_address and i not in wrong_address_labels:
+                if i in labels:
+                    labels.remove(i)
+
+                time_critical_labels.append(i)
+            elif j in i and i not in wrong_address_labels and j in wrong_address:
+                if i in labels:
+                    labels.remove(i)
+                elif i in time_critical_labels:
+                    time_critical_labels.remove(i)
+
+                wrong_address_labels.append(i)
+
+    # add the time critical stops to the front of the route
+    while len(time_critical_labels) > 0:
+        closest = None
+
+        for i in time_critical_labels:
+            if closest is None and i not in route:
+                closest = i
+            elif i not in route and (
+                    graph.get_weight(route[-1][1], i[1]) < graph.get_weight(route[-1][1], closest[1])
+                    or graph.get_weight(i[1], route[-1][1]) < graph.get_weight(closest[1], route[-1][1])):
+                closest = i
+
+        route.append(closest)
+        time_critical_labels.remove(closest)
 
     # Find the closest
     while len(labels) > 0:
@@ -208,6 +249,22 @@ def create_route(packages: list, graph: Graph) -> list:  # TODO: Make the packag
         route.append(closest)
         labels.remove(closest)
 
+    # Find the closest for wrong address
+    while len(wrong_address_labels) > 0:
+        closest = None
+
+        for i in wrong_address_labels:
+            if closest is None and i not in route:
+                closest = i
+            elif i not in route and (
+                    graph.get_weight(route[-1][1], i[1]) < graph.get_weight(route[-1][1], closest[1])
+                    or graph.get_weight(i[1], route[-1][1]) < graph.get_weight(closest[1], route[-1][1])):
+                closest = i
+
+        route.append(closest)
+        wrong_address_labels.remove(closest)
+
+    # Always end the route at home
     route.append(graph.labels[0])
 
     return route
@@ -228,13 +285,44 @@ def insert_package(package: int, routes: list, graph: Graph) -> list:
     return most_efficient_route
 
 
+def correct_address(package: HashIt, graph: Graph):
+    global wrong_address, all_packages
+
+    # Remove the package from the wrong address array
+    package_id = package.get("Package ID")
+    wrong_address.remove(package_id)
+    package.set("Special Note", "Address Corrected")
+
+    # Change the affected address in all_packages
+    unfiltered_address = '410 S State St., Salt Lake City, UT 84111'
+    new_city = unfiltered_address.split(',')[1]
+    new_zip = unfiltered_address.split(',')[2].split(' ')[-1]
+    new_address = " " + unfiltered_address.split(',')[0].replace('.', '') + f" ({new_zip})"
+    package.set("Delivery Address", new_address)
+    package.set("Delivery City", new_city)
+    package.set("Delivery Zip Code", new_zip)
+
+    # Remove the package from it's point on the graph and Add it to it's proper point
+    for i in graph.labels:
+        if package_id in i:
+            i.remove(package_id)
+
+        if new_address in i:
+            i.append(package_id)
+
+
 def execute_route(truck: Truck, graph: Graph) -> None:
     """ Function to execute the route """
-    global shutdown, traveled_miles
+    global shutdown, traveled_miles, wrong_address
     previous_stop = truck.route[0][0]
     distance_traveled = 0
     stop_distance = 0
-    speed_per_min = truck.speed / (60 / interval)
+    speed_per_min = (truck.speed / 60) / interval
+
+    wrong_address_packages = []
+
+    for i in wrong_address:
+        wrong_address_packages.append(all_packages.get_package(i))
 
     # loop until it's go time
     while get_sim_time() <= truck.departure_time:
@@ -243,8 +331,6 @@ def execute_route(truck: Truck, graph: Graph) -> None:
             exit()
 
         time.sleep(interval / 4)
-
-    # TODO: Check for a Wrong address package, place that package at the end of the route and recreate
 
     # Change status of those that are delayed
     for i in truck.packages:
@@ -256,6 +342,20 @@ def execute_route(truck: Truck, graph: Graph) -> None:
         # check for shutdown call
         if shutdown:
             exit()
+
+        # Check for a wrong address package and recurse if there is one.
+        if len(list(set(truck.packages).intersection(wrong_address_packages))) > 0 and curr_time >= [10, 20]:
+            wrong_address_filtered = set(truck.packages).intersection(set(wrong_address_packages))
+
+            # remove them from wrong_address so they'll be placed earlier in the route
+            for j in wrong_address_filtered:
+                correct_address(j, graph)
+
+            truck.route[0] = create_route(truck.route[2], graph, previous_stop)
+
+            # recurse I guess?
+            execute_route(truck, graph)
+            return
 
         next_stop = truck.route[0][i]
 
@@ -271,20 +371,20 @@ def execute_route(truck: Truck, graph: Graph) -> None:
                 # Do the stuff for not simulation. Check the time and such
                 pass
 
-        # TODO: If a wrong address is existing, check to see if the time is later, recreate the route
-
         # Mark the packages as delivered
         deliv_time = get_sim_time()
 
         for j in next_stop[2:]:
             for k in truck.packages:
-                if k.get("Package ID") == j:
+                if k.get("Package ID") == j and k not in wrong_address_packages:
                     if type(k.get("Delivery Deadline")) == str or k.get("Delivery Deadline") >= deliv_time:
                         k.set("Delivery Status", f"Package Delivered at {deliv_time}")
                         truck.packages.remove(k)
+                        truck.route[2].remove(j)
                     elif k.get("Delivery Deadline") < deliv_time:
                         k.set("Delivery Status", f"Package Delivered at {deliv_time} ***LATE***")
                         truck.packages.remove(k)
+                        truck.route[2].remove(j)
                     break
 
         # Clear the variables that we have here
@@ -292,7 +392,7 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
 
 def main():
-    global all_packages, sim, shutdown, complete, over_miles
+    global all_packages, sim, shutdown, complete, over_miles, delayed, paired, time_critical, wrong_address
 
     # Define our trucks
     total_trucks = 3
@@ -300,9 +400,6 @@ def main():
 
     # Simulation variable, False, follows true time of day, True, 1 minute = 1 second
     sim = True
-
-    if sim:
-        Thread(target=sim_time, args=(1,)).start()
 
     # import our xlsx files
     distances = pd.read_excel("./project_files/WGUPS Distance Table.xlsx")
@@ -332,9 +429,6 @@ def main():
     distances_df = distances_df.set_axis(distances_headers, axis=1)
     packages_df = packages_df.set_axis(packages_headers, axis=1)
 
-    # Define our packages hashmap
-    all_packages = Packages()
-
     # Plug packages into our hashmap
     for i in range(len(packages_df.index)):
         row = packages_df.iloc[i]
@@ -361,12 +455,7 @@ def main():
 
     # filter some stuff
     size = all_packages.size()
-
-    delayed = []
-    paired = []
-    time_critical = []
     truck_specific = []
-    wrong_address = []
 
     # Create our trucks
     for i in range(total_trucks):
@@ -377,7 +466,7 @@ def main():
         curr_pack = all_packages.get_package(i)
 
         if type(curr_pack.get("Delivery Deadline")) is not str:  # Delivered by a specific time?
-            time_critical.append(curr_pack)
+            time_critical.append(curr_pack.get("Package ID"))
 
         try:
             if "Delayed" in curr_pack.get("Special Note"):  # Delayed oh gosh
@@ -564,8 +653,6 @@ def main():
     Delayed
     Truck_specific
     Paired
-    
-    Need to add time critical
     """
 
     # Delayed Checks
@@ -650,11 +737,29 @@ def main():
                             trucks[j].departure_time = datetime.time(9, 5)
                 break
 
-    # Execute the routes
+    # start our timer
+    if sim:
+        Thread(target=sim_time, args=(1,)).start()
+
+    starting_threads = threading.active_count()
+
+    # Do a last minute calculation, execute the routes
     for i in trucks:
+        i.route[0] = create_route(i.route[2], stop_map)
         Thread(target=execute_route, args=(i, stop_map)).start()
 
     # TODO: Create new threads for other routes if needed
+
+    # Loop until threads are done
+    while threading.active_count() > starting_threads:
+        time.sleep(interval)
+
+    # Make sure all packages are delivered
+    for i in trucks:
+        if len(i.packages) > 0:
+            i.route[0] = create_route(i.route[2], stop_map)
+            execute_route(i, stop_map)
+            # Thread(target=execute_route, args=(i, stop_map)).start()
 
     complete = True
 
