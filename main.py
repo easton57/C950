@@ -366,6 +366,9 @@ def execute_route(truck: Truck, graph: Graph) -> None:
             traveled_miles += speed_per_min
 
             if sim:
+                if distance_traveled >= stop_distance:
+                    break
+
                 time.sleep(interval)
             else:
                 # Do the stuff for not simulation. Check the time and such
