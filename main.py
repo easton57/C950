@@ -640,7 +640,7 @@ def main():
         if efficient is not None:
             truck_specific_routes_final.append(efficient)
 
-    # TODO: Need to handle this a bit differently. This will create issues if there are multiple trucks with requirements
+    # TODO: Need to handle this a bit differently. This'll create issues if there are multiple trucks with requirements
     truck_specific_routes_final = shortest_route(truck_specific_routes_final, stop_map)
 
     # Add any missing packages
