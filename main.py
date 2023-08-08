@@ -62,7 +62,11 @@ def update_table():
         # Insert data into the table
         for i in range(1, all_packages.size() + 1):
             package = [all_packages.get_package(i).get("Package ID"),
+                       all_packages.get_package(i).get("Delivery Address"),
                        all_packages.get_package(i).get("Delivery Deadline"),
+                       all_packages.get_package(i).get("Delivery City"),
+                       all_packages.get_package(i).get("Delivery Zip Code"),
+                       all_packages.get_package(i).get("Delivery Weight"),
                        all_packages.get_package(i).get("Delivery Status"),
                        all_packages.get_package(i).get("Special Note")]
             table.insert("", "end", values=package)
@@ -97,18 +101,23 @@ def create_package_table():
     window_height = 500
 
     # Set the initial window size
-    root.geometry(f"{775}x{window_height}")
+    root.geometry(f"{1000}x{window_height}")
 
     time_label = tk.Label(root, text="", font=("Helvetica", 12))
     time_label.pack()
 
     table = ttk.Treeview(root,
-                         columns=("Package ID", "Delivery Deadline", "Delivery Status", "Special Note"),
+                         columns=("Package ID", "Delivery Address", "Delivery Deadline", "Delivery City",
+                                  "Delivery Zip Code", "Delivery Weight", "Delivery Status", "Special Note"),
                          show="headings", height=400)
 
     # Define column headings
     table.heading("Package ID", text="Package ID")
+    table.heading("Delivery Address", text="Delivery Address")
     table.heading("Delivery Deadline", text="Delivery Deadline")
+    table.heading("Delivery City", text="Delivery City")
+    table.heading("Delivery Zip Code", text="Delivery Zip Code")
+    table.heading("Delivery Weight", text="Delivery Weight")
     table.heading("Delivery Status", text="Delivery Status")
     table.heading("Special Note", text="Special Note")
 
@@ -128,7 +137,10 @@ def sim_time(new_interval: int) -> None:
     global interval, shutdown, complete
     interval = new_interval
 
-    while not shutdown or not complete:
+    while not shutdown:
+        if complete:
+            break
+
         time.sleep(interval)
         curr_time[1] += 1
 
