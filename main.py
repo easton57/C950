@@ -36,7 +36,8 @@ def update_table():
     # Show a pop-up when the routes have finished being created and assigned
     if complete:
         messagebox.showinfo("Route Completed",
-                            "Routes are completed and packages delivered.")
+                            f"Routes are completed and packages delivered.\n"
+                            f"Total miles used by all trucks: {format(traveled_miles, '5.2f')}")
         complete = False
 
     if over_miles:
