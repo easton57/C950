@@ -621,7 +621,8 @@ def main():
     for i in truck_specific:
         if len(i) != 0:
             for j in stop_map.labels:
-                if "HUB" not in j[1] and (i in possible_routes.get(j[1])[2] or len(list(set(i).intersection(possible_routes.get(j[1])[2]))) > len(i) * .70):
+                if "HUB" not in j[1] and (i in possible_routes.get(j[1])[2] or
+                                          len(list(set(i).intersection(possible_routes.get(j[1])[2]))) > len(i) * .70):
                     truck_specific_routes.append(possible_routes.get(j[1]))
 
     # Find the most efficient out of the truck specific, save them if 70% of packages match:
@@ -699,7 +700,8 @@ def main():
             added_routes.append([create_route(j[2], stop_map), distance_calc(create_route(j[2], stop_map), stop_map), j[2]])
 
         for j in range(len(added_routes)):
-            if (not most_efficient_route or added_routes[j][1] < added_routes[most_efficient_route][1]) and len(added_routes[j][2]) <= 16:
+            if (not most_efficient_route or added_routes[j][1] < added_routes[most_efficient_route][1]) and \
+                    len(added_routes[j][2]) <= 16:
                 most_efficient_route = j
 
         if most_efficient_route is not None:
@@ -720,24 +722,28 @@ def main():
 
                 for k in i[2]:
                     trucks[j].add_package(all_packages.get_package(k))
-                    all_packages.get_package(k).set("Delivery Status", f"Package is on truck {trucks[j].truck_id} for delivery")
+                    all_packages.get_package(k).set("Delivery Status",
+                                                    f"Package is on truck {trucks[j].truck_id} for delivery")
 
                     if trucks[j].departure_time == math.inf:
                         trucks[j].departure_time = datetime.time(8)
                 break
             elif len(trucks[j].packages) == 0:
                 for k in i[2]:
-                    if type(all_packages.get_package(k).get("Special Note")) != str or 'Delayed' not in all_packages.get_package(k).get("Special Note"):
+                    if type(all_packages.get_package(k).get("Special Note")) != str or \
+                            'Delayed' not in all_packages.get_package(k).get("Special Note"):
                         trucks[j].route = i
                         trucks[j].add_package(all_packages.get_package(k))
-                        all_packages.get_package(k).set("Delivery Status", f"Package is on truck {trucks[j].truck_id} for delivery")
+                        all_packages.get_package(k).set("Delivery Status",
+                                                        f"Package is on truck {trucks[j].truck_id} for delivery")
 
                         if trucks[j].departure_time == math.inf:
                             trucks[j].departure_time = datetime.time(8)
                     else:
                         trucks[j].route = i
                         trucks[j].add_package(all_packages.get_package(k))
-                        all_packages.get_package(k).set("Delivery Status", f"truck {trucks[j].truck_id} waiting for arrival")
+                        all_packages.get_package(k).set("Delivery Status",
+                                                        f"truck {trucks[j].truck_id} waiting for arrival")
 
                         if trucks[j].departure_time == math.inf or trucks[j].departure_time < datetime.time(9, 5):
                             trucks[j].departure_time = datetime.time(9, 5)
