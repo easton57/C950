@@ -83,7 +83,6 @@ def on_close():
     global shutdown
     shutdown = True
     root.destroy()
-    sys.exit()
 
 
 def create_package_table():
