@@ -533,8 +533,6 @@ def main():
         stop_map.update_vertex(address, new_label)
 
     # Create the routes
-    max_miles = 140  # Per project requirements (for all trucks combined)
-
     # Generate every possible route? No sir
     possible_routes = HashIt()
 
