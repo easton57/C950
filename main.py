@@ -27,11 +27,12 @@ paired = []
 time_critical = []
 wrong_address = []
 all_packages = Packages()
+search_var = ""
 
 
 def update_table():
     """ Dynamically reset the table time and package status's """
-    global shutdown, complete, over_miles, traveled_miles
+    global shutdown, complete, over_miles, traveled_miles, search_var
 
     # Show a pop-up when the routes have finished being created and assigned
     if complete:
@@ -57,6 +58,8 @@ def update_table():
             time_label.config(text="Current Time: " + current_time +
                                    f"\tMiles Traveled: {format(traveled_miles, '5.2f')}")
 
+        search_query = search_var.get().lower()
+
         # Clear existing rows in the table
         table.delete(*table.get_children())
 
@@ -70,7 +73,10 @@ def update_table():
                        all_packages.get_package(i).get("Delivery Weight"),
                        all_packages.get_package(i).get("Delivery Status"),
                        all_packages.get_package(i).get("Special Note")]
-            table.insert("", "end", values=package)
+
+            # Check if any field contains the search query
+            if any(search_query in str(field).lower() for field in package):
+                table.insert("", "end", values=package)
 
         # Schedule the update_table function to run again after 1 second
         root.after(1000, update_table)
@@ -87,9 +93,14 @@ def on_close():
 
 def create_package_table():
     """ Function for our status window """
-    global root, table, time_label
+    global root, table, time_label, search_var
     root = tk.Tk()
     root.title("Package Status")
+
+    top_frame = tk.Frame(root)
+    top_frame.pack(side=tk.TOP)
+    bottom_frame = tk.Frame(root)
+    bottom_frame.pack(side=tk.BOTTOM)
 
     # Set dynamic adjustments
     root.pack_propagate(True)
@@ -103,10 +114,20 @@ def create_package_table():
     # Set the initial window size
     root.geometry(f"{1000}x{window_height}")
 
-    time_label = tk.Label(root, text="", font=("Helvetica", 12))
-    time_label.pack()
+    # Add our search bar
+    search_var = tk.StringVar()
+    search_entry = tk.Entry(top_frame, textvariable=search_var, font=("Helvetica", 12))
+    search_entry.pack(anchor="ne", side=tk.RIGHT)
 
-    table = ttk.Treeview(root,
+    # Search label
+    search_label = tk.Label(top_frame, text="Package Search: ", font=("Helvetica", 12))
+    search_label.pack(side=tk.RIGHT)
+
+    # Our time label
+    time_label = tk.Label(top_frame, text="", font=("Helvetica", 12))
+    time_label.pack(padx=(350, 100), fill=tk.BOTH, side=tk.RIGHT)
+
+    table = ttk.Treeview(bottom_frame,
                          columns=("Package ID", "Delivery Address", "Delivery Deadline", "Delivery City",
                                   "Delivery Zip Code", "Delivery Weight", "Delivery Status", "Special Note"),
                          show="headings", height=400)
