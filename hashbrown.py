@@ -94,7 +94,7 @@ class HashIt:
 
 
 class Packages:
-    def __init__(self):
+    def __init__(self) -> None:
         self.packages = HashIt()
 
     def set_package(self, id=None, deliv_addr=None, deliv_deadline=None, deliv_city=None, deliv_zip=None, deliv_weight=None, deliv_status=None, note=None, package=None) -> None:
@@ -119,6 +119,22 @@ class Packages:
     def size(self) -> int:
         return self.packages.size
 
-    # Print the table in a nice way
+    def package_search(self, search_term, search_field: str) -> None:
+        """ Search function that returns all packages that contain the term in any field """
+        matched_packages = []
+
+        # Pull each package and check to see if any aspect conatains the search_term
+        for i in range(1, self.packages.size + 1):
+            package = self.packages.get(i)
+
+            if str(search_term) in str(package.get(search_field)):
+                matched_packages.append(package)
+
+        print("The following packages contain a match to your search term:")
+
+        for i in matched_packages:
+            print(i)
+
     def __str__(self) -> str:
+        """ Print the packages in a nice way """
         return self.packages.__str__()
