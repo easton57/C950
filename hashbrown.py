@@ -119,7 +119,7 @@ class Packages:
     def size(self) -> int:
         return self.packages.size
 
-    def package_search(self, search_term, search_field: str) -> None:
+    def package_search(self, search_term, search_field: str) -> list:
         """ Search function that returns all packages that contain the term in any field """
         matched_packages = []
 
@@ -137,6 +137,8 @@ class Packages:
                 print(i)
         else:
             print("Search results are empty! Please verify your search term and field.")
+
+        return matched_packages
 
     def __str__(self) -> str:
         """ Print the packages in a nice way """
