@@ -130,10 +130,13 @@ class Packages:
             if str(search_term) in str(package.get(search_field)):
                 matched_packages.append(package)
 
-        print("The following packages contain a match to your search term:")
+        if len(matched_packages) != 0:
+            print("The following packages contain a match to your search term:")
 
-        for i in matched_packages:
-            print(i)
+            for i in matched_packages:
+                print(i)
+        else:
+            print("Search results are empty! Please verify your search term and field.")
 
     def __str__(self) -> str:
         """ Print the packages in a nice way """
