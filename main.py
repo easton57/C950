@@ -428,6 +428,7 @@ def execute_route(truck: Truck, graph: Graph) -> None:
 
 
 def main():
+    """ Driver for the Nearest Pair Algorithm """
     global all_packages, sim, shutdown, complete, over_miles, delayed, paired, time_critical, wrong_address
 
     # Define our trucks
